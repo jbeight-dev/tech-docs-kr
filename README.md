@@ -26,6 +26,7 @@ python3 -m http.server 8000            # http://localhost:8000 에서 미리보�
 | `path` | O | 저장소 루트 기준 상대경로 (`/`로 시작하지 않음) |
 | `translated_at` | O | 번역일 (`YYYY-MM-DD`) |
 | `source_url`, `license` | O | 원문 URL, 원문 라이선스. 확인한 값만 적고 추측하지 않는다 |
+| `written_at` | | 번역본이 아닌 자체 작성 문서의 작성일. 있으면 `translated_at`, `source_url`, `license`를 생략할 수 있고, 최근 번역순에서는 뒤에 놓인다 |
 | `source_version` | | 원문 버전 또는 커밋 |
 | `tags` | | 검색용 태그 배열 |
 

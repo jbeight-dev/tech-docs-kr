@@ -7,7 +7,8 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).parent.parent).resolve()
-REQUIRED = ("id", "title", "category", "description", "path", "translated_at", "source_url", "license")
+REQUIRED = ("id", "title", "category", "description", "path")
+TRANSLATION_REQUIRED = ("translated_at", "source_url", "license")  # written_at이 있는 자체 작성 문서는 제외
 
 
 class Refs(HTMLParser):
@@ -37,7 +38,8 @@ def check():
     seen, registered = set(), set()
     for doc in docs:
         label = doc.get("id") or doc.get("path") or "(id 없음)"
-        errors += [f"{label}: {key} 값이 비어 있음" for key in REQUIRED if not doc.get(key)]
+        required = REQUIRED if doc.get("written_at") else REQUIRED + TRANSLATION_REQUIRED
+        errors += [f"{label}: {key} 값이 비어 있음" for key in required if not doc.get(key)]
         if doc.get("id") in seen:
             errors.append(f"{label}: id 중복")
         seen.add(doc.get("id"))

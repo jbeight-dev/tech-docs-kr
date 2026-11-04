@@ -641,5 +641,14 @@
     "tags": [
       "Skills CLI"
     ]
+  },
+  {
+    "id": "chatgpt-conversation-summary-prompt",
+    "title": "ChatGPT 대화 요약 프롬프트",
+    "category": "ChatGPT",
+    "description": "ChatGPT 대화를 요약하거나 새 채팅으로 이어가기 위한 인수인계 요약을 요청하는 문구입니다.",
+    "path": "prompt.html",
+    "written_at": "2026-11-05",
+    "tags": ["ChatGPT", "프롬프트", "요약", "인수인계"]
   }
 ]

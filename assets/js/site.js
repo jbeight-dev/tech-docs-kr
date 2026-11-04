@@ -27,14 +27,15 @@ function card(doc) {
   const h2 = el('h2');
   h2.append(link(doc.title, doc.path));
   const meta = el('div', '', 'meta');
-  const date = doc.translated_at ? ' · 번역일 ' + doc.translated_at : '';
+  const date = doc.translated_at ? ' · 번역일 ' + doc.translated_at
+    : doc.written_at ? ' · 작성일 ' + doc.written_at : '';
   meta.append(el('span', doc.category + date));
   if (doc.source_url) {
     const source = link('원문 ↗', doc.source_url);
     source.className = 'source-link';
     source.setAttribute('aria-label', doc.title + ' 원문 보기');
     meta.append(source);
-  } else {
+  } else if (!doc.written_at) {
     meta.append(el('span', '원문 미확인'));
   }
   li.append(h2, el('p', doc.description), meta);
