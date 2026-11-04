@@ -1,0 +1,645 @@
+[
+  {
+    "id": "datahub-dataset-usage-and-query-history",
+    "title": "데이터셋 사용량 및 쿼리 기록",
+    "category": "DataHub",
+    "description": "Dataset Usage & Query History는 데이터셋을 참조한 상위 쿼리 등 데이터셋 수준의 정보를 제공합니다.",
+    "path": "datahub/dataset-usage-and-query-history_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/dataset-usage-and-query-history.md",
+    "source_version": "bc9eebd",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-access-roles",
+    "title": "데이터 액세스 역할",
+    "category": "DataHub",
+    "description": "DataHub의 Access Roles 기능을 사용하면 소스 시스템의 외부 역할을 DataHub의 데이터 자산과 함께 수집할 수 있습니다.",
+    "path": "datahub/feature-guides/access-roles_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/access-roles.md",
+    "source_version": "ac8f5fb",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-agent-registry",
+    "title": "DataHub Agent Registry 소개",
+    "category": "DataHub",
+    "description": "DataHub Agent Registry는 AI 에이전트, 스킬, 에이전트가 호출하는 도구를 일급의 거버넌스 대상이자 버전 관리되는 메타데이터 엔터티로 카탈로그화하고, 이들이 다루는 데이터까지 리니지로 연결합니다.",
+    "path": "datahub/feature-guides/agent-registry_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/agent-registry.md",
+    "source_version": "2534652",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-agents",
+    "title": "커스텀 에이전트",
+    "category": "DataHub",
+    "description": "Agents를 사용하면 메타데이터 그래프를 대상으로 일정에 따라, 이벤트에 반응해, 또는 필요할 때 작업을 자율적으로 실행하는 커스텀 AI 에이전트를 만들 수 있습니다.",
+    "path": "datahub/feature-guides/agents_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/agents.md",
+    "source_version": "ea01094",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-applications",
+    "title": "DataHub Applications 소개",
+    "category": "DataHub",
+    "description": "DataHub Cloud Applications는 관련 자산을 비즈니스 목적별로 묶어 소프트웨어 시스템과 서비스를 모델링하는 실험적인 방법을 제공합니다.",
+    "path": "datahub/feature-guides/applications_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/applications.md",
+    "source_version": "a4bc0c8",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-ask-datahub-plugins-bigquery",
+    "title": "BigQuery 플러그인",
+    "category": "DataHub",
+    "description": "BigQuery Plugin은 BigQuery MCP 서버를 통해 Ask DataHub를 Google BigQuery에 연결해 채팅에서 바로 대화형 분석을 할 수 있게 합니다.",
+    "path": "datahub/feature-guides/ask-datahub-plugins/bigquery_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/bigquery.md",
+    "source_version": "884d673",
+    "license": "Apache-2.0",
+    "tags": [
+      "ask-datahub-plugins"
+    ]
+  },
+  {
+    "id": "datahub-ask-datahub-plugins-databricks",
+    "title": "Databricks 플러그인",
+    "category": "DataHub",
+    "description": "Databricks Plugin은 Databricks MCP 서버를 통해 Ask DataHub를 Databricks 워크스페이스에 연결해 채팅에서 바로 대화형 분석을 할 수 있게 합니다.",
+    "path": "datahub/feature-guides/ask-datahub-plugins/databricks_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/databricks.md",
+    "source_version": "884d673",
+    "license": "Apache-2.0",
+    "tags": [
+      "ask-datahub-plugins"
+    ]
+  },
+  {
+    "id": "datahub-ask-datahub-plugins-dbt",
+    "title": "dbt Cloud 플러그인",
+    "category": "DataHub",
+    "description": "dbt Cloud Plugin은 dbt 원격 MCP 서버를 통해 Ask DataHub를 dbt Cloud 환경에 연결합니다.",
+    "path": "datahub/feature-guides/ask-datahub-plugins/dbt_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/dbt.md",
+    "source_version": "884d673",
+    "license": "Apache-2.0",
+    "tags": [
+      "ask-datahub-plugins"
+    ]
+  },
+  {
+    "id": "datahub-ask-datahub-plugins-github",
+    "title": "GitHub 플러그인",
+    "category": "DataHub",
+    "description": "GitHub Plugin은 GitHub MCP 서버를 통해 Ask DataHub를 GitHub에 연결합니다.",
+    "path": "datahub/feature-guides/ask-datahub-plugins/github_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/github.md",
+    "source_version": "884d673",
+    "license": "Apache-2.0",
+    "tags": [
+      "ask-datahub-plugins"
+    ]
+  },
+  {
+    "id": "datahub-ask-datahub-plugins-glean",
+    "title": "Glean 플러그인",
+    "category": "DataHub",
+    "description": "Glean Plugin은 Ask DataHub를 조직의 Glean 인스턴스에 연결해 데이터 대화에서 엔터프라이즈 지식 검색을 사용할 수 있게 합니다.",
+    "path": "datahub/feature-guides/ask-datahub-plugins/glean_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/glean.md",
+    "source_version": "884d673",
+    "license": "Apache-2.0",
+    "tags": [
+      "ask-datahub-plugins"
+    ]
+  },
+  {
+    "id": "datahub-ask-datahub-plugins-overview",
+    "title": "Ask DataHub Plugins",
+    "category": "DataHub",
+    "description": "Snowflake, Databricks, BigQuery, dbt Cloud, GitHub, Glean 등의 외부 도구를 MCP를 통해 Ask DataHub에 직접 연결합니다.",
+    "path": "datahub/feature-guides/ask-datahub-plugins/overview_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/overview.md",
+    "source_version": "884d673",
+    "license": "Apache-2.0",
+    "tags": [
+      "ask-datahub-plugins"
+    ]
+  },
+  {
+    "id": "datahub-ask-datahub-plugins-snowflake",
+    "title": "Snowflake 플러그인",
+    "category": "DataHub",
+    "description": "Snowflake Plugin은 Ask DataHub를 Snowflake 관리형 MCP 서버에 연결해 채팅에서 바로 대화형 분석을 할 수 있게 합니다.",
+    "path": "datahub/feature-guides/ask-datahub-plugins/snowflake_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/snowflake.md",
+    "source_version": "884d673",
+    "license": "Apache-2.0",
+    "tags": [
+      "ask-datahub-plugins"
+    ]
+  },
+  {
+    "id": "datahub-ask-datahub",
+    "title": "Ask DataHub",
+    "category": "DataHub",
+    "description": "DataHub의 대화형 AI 어시스턴트 소개",
+    "path": "datahub/feature-guides/ask-datahub_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub.md",
+    "source_version": "a4bc0c8",
+    "license": "Apache-2.0",
+    "tags": [
+      "AI",
+      "Metadata"
+    ]
+  },
+  {
+    "id": "datahub-compliance-forms-analytics",
+    "title": "DataHub Compliance Form Analytics",
+    "category": "DataHub",
+    "description": "거버넌스 이니셔티브를 모니터링하는 내장 분석 뷰로 DataHub Cloud에서 Compliance Form의 완료 현황과 진행 상황을 추적합니다.",
+    "path": "datahub/feature-guides/compliance-forms/analytics_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/compliance-forms/analytics.md",
+    "source_version": "a4bc0c8",
+    "license": "Apache-2.0",
+    "tags": [
+      "compliance-forms"
+    ]
+  },
+  {
+    "id": "datahub-compliance-forms-complete-a-form",
+    "title": "DataHub Compliance Form 완료하기",
+    "category": "DataHub",
+    "description": "담당자가 Task Center 알림과 자산 워크플로를 통해 게시된 DataHub Compliance Form을 완료하는 단계별 가이드입니다.",
+    "path": "datahub/feature-guides/compliance-forms/complete-a-form_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/compliance-forms/complete-a-form.md",
+    "source_version": "e784496",
+    "license": "Apache-2.0",
+    "tags": [
+      "compliance-forms"
+    ]
+  },
+  {
+    "id": "datahub-compliance-forms-create-a-form",
+    "title": "DataHub Compliance Form 만들기",
+    "category": "DataHub",
+    "description": "Compliance Form을 만들고 할당하는 과정을 설명하는 가이드입니다.",
+    "path": "datahub/feature-guides/compliance-forms/create-a-form_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/compliance-forms/create-a-form.md",
+    "source_version": "5256377",
+    "license": "Apache-2.0",
+    "tags": [
+      "compliance-forms"
+    ]
+  },
+  {
+    "id": "datahub-compliance-forms-overview",
+    "title": "DataHub Compliance Forms 소개",
+    "category": "DataHub",
+    "description": "DataHub Compliance Forms를 사용하면 조직 전체의 핵심 데이터 자산을 구조화된 방식으로 크라우드소싱해 문서화하고 분류할 수 있습니다.",
+    "path": "datahub/feature-guides/compliance-forms/overview_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/compliance-forms/overview.md",
+    "source_version": "ac8f5fb",
+    "license": "Apache-2.0",
+    "tags": [
+      "compliance-forms"
+    ]
+  },
+  {
+    "id": "datahub-context-certification",
+    "title": "Certification",
+    "category": "DataHub",
+    "description": "팀이 신뢰하는 데이터 자산과 문서를 표시해, 사람과 AI 에이전트가 어떤 소스에 의존해야 하는지 알 수 있게 합니다.",
+    "path": "datahub/feature-guides/context/certification_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/certification.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-context-context-documents",
+    "title": "Context Documents",
+    "category": "DataHub",
+    "description": "런북, FAQ, 의사 결정 기록, 프로세스 가이드 같은 조직의 암묵지를 Context Documents로 DataHub에 담습니다.",
+    "path": "datahub/feature-guides/context/context-documents_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/context-documents.md",
+    "source_version": "66df165",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-context-context-evals",
+    "title": "Context Evals",
+    "category": "DataHub",
+    "description": "AI 에이전트가 DataHub 컨텍스트로 실제 비즈니스 질문에 답할 수 있는지 측정하고, 사용자가 발견하기 전에 회귀를 찾아냅니다.",
+    "path": "datahub/feature-guides/context/context-evals_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/context-evals.md",
+    "source_version": "ea01094",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-context-context-feedback",
+    "title": "Context Feedback",
+    "category": "DataHub",
+    "description": "AI 에이전트가 컨텍스트의 어떤 공백에 부딪히는지 확인하고, 각 공백을 지속적인 개선으로 바꿉니다.",
+    "path": "datahub/feature-guides/context/context-feedback_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/context-feedback.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-context-context-generation",
+    "title": "Context Generation",
+    "category": "DataHub",
+    "description": "팀의 분석 활동을 컨텍스트 문서로 바꿔, 비즈니스가 질문에 답하는 방식을 AI 에이전트에게 보여 줍니다.",
+    "path": "datahub/feature-guides/context/context-generation_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/context-generation.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-context-context-review",
+    "title": "컨텍스트 변경 사항 검토",
+    "category": "DataHub",
+    "description": "데이터를 잘 아는 사람이 AI 에이전트가 학습하는 내용을 통제하도록, 컨텍스트 변경 사항을 적용 전에 제안하고 테스트하고 승인합니다.",
+    "path": "datahub/feature-guides/context/context-review_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/context-review.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-context-import-confluence",
+    "title": "Confluence에서 가져오기",
+    "category": "DataHub",
+    "description": "검색과 AI 어시스턴트에 활용하도록 Confluence 페이지를 DataHub Context Documents로 가져옵니다.",
+    "path": "datahub/feature-guides/context/import-confluence_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/import-confluence.md",
+    "source_version": "23045f8",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-context-import-github",
+    "title": "GitHub에서 가져오기",
+    "category": "DataHub",
+    "description": "GitHub 리포지토리 문서를 DataHub Context Documents로 가져오고, 선택적으로 편집 내용을 GitHub로 역동기화합니다.",
+    "path": "datahub/feature-guides/context/import-github_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/import-github.md",
+    "source_version": "23045f8",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-context-import-notion",
+    "title": "Notion에서 가져오기",
+    "category": "DataHub",
+    "description": "검색과 AI 어시스턴트에 활용하도록 Notion 페이지를 DataHub Context Documents로 가져옵니다.",
+    "path": "datahub/feature-guides/context/import-notion_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/import-notion.md",
+    "source_version": "23045f8",
+    "license": "Apache-2.0",
+    "tags": [
+      "context"
+    ]
+  },
+  {
+    "id": "datahub-custom-asset-summaries",
+    "title": "Asset Summaries",
+    "category": "DataHub",
+    "description": "DataHub에서 Domains, Data Products, Glossary Terms의 Summary 탭을 사용자 지정해 큐레이션된 탐색 환경을 만듭니다.",
+    "path": "datahub/feature-guides/custom-asset-summaries_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/custom-asset-summaries.md",
+    "source_version": "6a51a50",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-custom-home-page",
+    "title": "홈 페이지",
+    "category": "DataHub",
+    "description": "모듈형 위젯으로 개인화된 DataHub 홈 페이지를 구성해 각 사용자에게 가장 관련성 높은 데이터 자산과 정보를 보여 줍니다.",
+    "path": "datahub/feature-guides/custom-home-page_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/custom-home-page.md",
+    "source_version": "a4bc0c8",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-file-upload-download",
+    "title": "문서의 파일 업로드 및 다운로드",
+    "category": "DataHub",
+    "description": "DataHub의 자산 및 컬럼 문서에 이미지, 다이어그램, 지원 파일을 첨부해 데이터 카탈로그를 풍부하게 만듭니다.",
+    "path": "datahub/feature-guides/file-upload-download_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/file-upload-download.md",
+    "source_version": "a4bc0c8",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-lineage",
+    "title": "DataHub 리니지 소개",
+    "category": "DataHub",
+    "description": "DataHub 데이터 리니지로 소스 시스템에서 변환을 거쳐 소비에 이르기까지 조직 내 데이터 흐름을 파악합니다.",
+    "path": "datahub/feature-guides/lineage_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/lineage.md",
+    "source_version": "2534652",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-logical-models-centralized-management",
+    "title": "중앙 집중식 관리",
+    "category": "DataHub",
+    "description": "중앙 집중식 관리(Centralized Management)를 사용하면 논리 상위 수준에서 모든 물리 하위 항목을 거버넌스할 수 있습니다.",
+    "path": "datahub/feature-guides/logical-models/centralized-management_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/logical-models/centralized-management.md",
+    "source_version": "ebfc18c",
+    "license": "Apache-2.0",
+    "tags": [
+      "logical-models"
+    ]
+  },
+  {
+    "id": "datahub-logical-models-overview",
+    "title": "논리 모델",
+    "category": "DataHub",
+    "description": "논리 모델은 소스 시스템의 특정 물리적 구현에 묶이지 않고 데이터베이스 테이블의 개념과 구조를 나타냅니다.",
+    "path": "datahub/feature-guides/logical-models/overview_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/logical-models/overview.md",
+    "source_version": "80abae8",
+    "license": "Apache-2.0",
+    "tags": [
+      "logical-models"
+    ]
+  },
+  {
+    "id": "datahub-metrics-and-semantic-models",
+    "title": "Metrics & Semantic Models",
+    "category": "DataHub",
+    "description": "비즈니스 메트릭 정의를 DataHub의 일급 엔터티로 만들어 거버넌스를 적용하고, 리니지와 연결하고, 검색으로 찾고, 풍부한 AI 컨텍스트를 제공합니다.",
+    "path": "datahub/feature-guides/metrics-and-semantic-models_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/metrics-and-semantic-models.md",
+    "source_version": "2328de3",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-multi-language-support",
+    "title": "다국어 지원",
+    "category": "DataHub",
+    "description": "DataHub UI를 원하는 언어로 표시하고, 오픈소스 프로젝트에 새 번역을 기여합니다.",
+    "path": "datahub/feature-guides/multi-language-support_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/multi-language-support.md",
+    "source_version": "0b09275",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-ontology-custom-relationships",
+    "title": "커스텀 관계 추가하기",
+    "category": "DataHub",
+    "description": "relationship Structured Properties로 governed by, derived from, broader than 같은 자체 관계 유형을 방향, 전이성, 표준 어휘 매핑과 함께 정의합니다.",
+    "path": "datahub/feature-guides/ontology/custom-relationships_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/custom-relationships.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "ontology"
+    ]
+  },
+  {
+    "id": "datahub-ontology-overview",
+    "title": "온톨로지란?",
+    "category": "DataHub",
+    "description": "비즈니스 온톨로지는 용어 간에 타입이 지정되고 기계가 읽을 수 있는 관계를 추가해 Business Glossary를 확장하고, 단순한 정의 목록을 비즈니스의 연결된 모델로 바꿉니다.",
+    "path": "datahub/feature-guides/ontology/overview_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/overview.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "ontology"
+    ]
+  },
+  {
+    "id": "datahub-ontology-querying-your-ontology",
+    "title": "온톨로지 쿼리하기",
+    "category": "DataHub",
+    "description": "traverse API로 온톨로지를 프로그래밍 방식으로 따라가거나, DataHub MCP 서버를 통해 AI 에이전트가 대신 따라가게 합니다.",
+    "path": "datahub/feature-guides/ontology/querying-your-ontology_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/querying-your-ontology.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "ontology"
+    ]
+  },
+  {
+    "id": "datahub-ontology-relating-glossary-terms",
+    "title": "용어집 용어 연결하기",
+    "category": "DataHub",
+    "description": "상속, 포함, 동의어, 반의어, 번역, 유효 값 같은 타입이 지정된 관계로 용어집 용어를 연결해 Business Glossary를 온톨로지로 바꿉니다.",
+    "path": "datahub/feature-guides/ontology/relating-glossary-terms_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/relating-glossary-terms.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "ontology"
+    ]
+  },
+  {
+    "id": "datahub-ontology-sparql-api",
+    "title": "SPARQL을 사용한 고급 쿼리",
+    "category": "DataHub",
+    "description": "표준 SPARQL로 DataHub 관계 그래프를 쿼리합니다. 쿼리 시점에 DataHub의 네이티브 그래프 탐색으로 컴파일되므로 트리플 스토어나 구체화가 필요 없습니다.",
+    "path": "datahub/feature-guides/ontology/sparql-api_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/sparql-api.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "ontology"
+    ]
+  },
+  {
+    "id": "datahub-ontology-visualizing-your-ontology",
+    "title": "온톨로지 시각화하기",
+    "category": "DataHub",
+    "description": "Ontology 페이지에서 전체 용어집을, Relationships 탭에서 단일 용어를 중심으로 온톨로지를 대화형 그래프로 탐색합니다.",
+    "path": "datahub/feature-guides/ontology/visualizing-your-ontology_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/visualizing-your-ontology.md",
+    "source_version": "4e3afa4",
+    "license": "Apache-2.0",
+    "tags": [
+      "ontology"
+    ]
+  },
+  {
+    "id": "datahub-properties-create-a-property",
+    "title": "DataHub Structured Property 만들기 및 추가하기",
+    "category": "DataHub",
+    "description": "DataHub UI에서 Structured Property를 만드는 과정을 설명하는 가이드입니다.",
+    "path": "datahub/feature-guides/properties/create-a-property_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/properties/create-a-property.md",
+    "source_version": "14e8de5",
+    "license": "Apache-2.0",
+    "tags": [
+      "properties"
+    ]
+  },
+  {
+    "id": "datahub-properties-overview",
+    "title": "DataHub Structured Properties 소개",
+    "category": "DataHub",
+    "description": "Structured Properties로 모든 DataHub 엔터티에 검증된 커스텀 메타데이터 필드를 추가해 거버넌스와 탐색 사용 사례를 지원합니다.",
+    "path": "datahub/feature-guides/properties/overview_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/properties/overview.md",
+    "source_version": "68fb10c",
+    "license": "Apache-2.0",
+    "tags": [
+      "properties"
+    ]
+  },
+  {
+    "id": "datahub-scoped-mcp-servers",
+    "title": "범위 지정 MCP 서버",
+    "category": "DataHub",
+    "description": "DataHub Cloud에서 고유한 도구, 지침, 뷰, 연결 URL을 갖춘 범위 지정 커스텀 MCP 서버를 만듭니다.",
+    "path": "datahub/feature-guides/scoped-mcp-servers_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/scoped-mcp-servers.md",
+    "source_version": "ea01094",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-service-accounts",
+    "title": "서비스 계정",
+    "category": "DataHub",
+    "description": "서비스 계정은 개인 사용자 자격 증명을 사용하지 않고 DataHub API에 프로그래밍 방식으로 접근할 수 있는 안전한 방법을 제공합니다.",
+    "path": "datahub/feature-guides/service-accounts_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/service-accounts.md",
+    "source_version": "954cc40",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-service-catalog",
+    "title": "DataHub Service Catalog 소개",
+    "category": "DataHub",
+    "description": "DataHub Service Catalog는 리포지토리, 서비스, API, 애플리케이션 같은 소프트웨어 시스템을 타입이 지정된 일급 거버넌스 메타데이터 엔터티로 만들어 데이터 바로 옆에 둡니다.",
+    "path": "datahub/feature-guides/service-catalog_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/service-catalog.md",
+    "source_version": "2534652",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-ui-lineage",
+    "title": "UI에서 데이터 리니지 관리하기",
+    "category": "DataHub",
+    "description": "DataHub UI에서 데이터셋, 대시보드, 파이프라인 간의 데이터 리니지 관계를 보고, 편집하고, 관리합니다.",
+    "path": "datahub/feature-guides/ui-lineage_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ui-lineage.md",
+    "source_version": "a4bc0c8",
+    "license": "Apache-2.0",
+    "tags": []
+  },
+  {
+    "id": "datahub-views-overview",
+    "title": "Views",
+    "category": "DataHub",
+    "description": "Views를 사용하면 필터 집합을 저장해 DataHub 전체에서 재사용할 수 있습니다.",
+    "path": "datahub/feature-guides/views/overview_ko.html",
+    "translated_at": "2026-11-04",
+    "source_url": "https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/views/overview.md",
+    "source_version": "f6e7a26",
+    "license": "Apache-2.0",
+    "tags": [
+      "views"
+    ]
+  },
+  {
+    "id": "skills-find-skills",
+    "title": "Skills 찾기",
+    "category": "Agent Skills",
+    "description": "오픈 에이전트 skill 생태계에서 skill을 찾아 설치하도록 돕는 skill입니다.",
+    "path": "skills/find-skills_ko.html",
+    "translated_at": "2026-11-05",
+    "source_url": "https://github.com/vercel-labs/skills/blob/main/skills/find-skills/SKILL.md",
+    "source_version": "773fb2c",
+    "license": "MIT",
+    "tags": [
+      "Skills CLI"
+    ]
+  }
+]

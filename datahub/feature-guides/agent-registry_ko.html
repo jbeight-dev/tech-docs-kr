@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataHub Agent Registry 소개</title>
+<meta name="description" content="DataHub Agent Registry는 AI 에이전트, 스킬, 에이전트가 호출하는 도구를 일급의 거버넌스 대상이자 버전 관리되는 메타데이터 엔터티로 카탈로그화하고, 이들이 다루는 데이터까지 리니지로 연결합니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">DataHub Agent Registry 소개</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/agent-registry.md">agent-registry.md</a></span><span>원본 커밋: 2534652</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="about-the-datahub-agent-registry">DataHub Agent Registry 소개</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용</p></blockquote>
+<p>DataHub Cloud v2.1에 도입된 <mark>Agent Registry</mark>는 AI 에이전트, 에이전트가 채택하는 스킬, 에이전트가 호출하는 도구를
+일급의 거버넌스 대상이자 버전 관리되는 메타데이터 엔터티로 카탈로그화합니다. 이들은 에이전트가 소비하는 데이터와 같은 리니지
+그래프에 놓입니다. 덕분에 실행 중인 에이전트의 수, 각 에이전트가 다루는 데이터, 소유자 같은 질문에
+이미 데이터에 사용 중인 카탈로그에서 답할 수 있습니다.</p>
+<p>에이전트가 데이터셋과 함께 그래프에 존재하므로, 데이터에 이미 적용 중인 거버넌스(소유권, 분류, 리니지, 인시던트, 변경 기록)가
+별도 구성 없이 AI 계층까지 확장됩니다.</p>
+<blockquote>
+<p><strong>참고: Agent Registry와 Agents의 차이</strong></p>
+<p>이 가이드는 <mark>AI 에이전트를 메타데이터로 카탈로그화</mark>하는 방법, 즉 에이전트를 검색할 수 있고 소유자가 있으며
+거버넌스를 적용할 수 있게 만드는 방법을 다룹니다. 일정에 따라 또는 이벤트에 반응해 작업을 자율적으로 실행하는 AI 에이전트를 <mark>구축</mark>하려면
+<a href="agents_ko.html">Agents</a> 가이드를 참고하세요. 두 기능은 상호 보완적입니다. 직접 구축한 에이전트를 여기에 카탈로그화할 수 있고,
+여기에 카탈로그화된 에이전트에는 다른 자산처럼 거버넌스를 적용할 수 있습니다.</p>
+</blockquote>
+<h2 id="concepts">개념</h2>
+<p>Agent Registry는 두 가지 핵심 엔터티 유형을 도입하고, 에이전트의 도구에는 Service Catalog의 API 및
+Service 엔터티를 재사용합니다.</p>
+<table>
+<thead>
+<tr>
+<th>엔터티</th>
+<th>나타내는 대상</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>AI Agent</mark></td>
+<td>지침, 범위, 의존성을 갖춘 AI 에이전트입니다. 네이티브(DataHub 관리형), 시스템, 외부(카탈로그화됨) 유형이 있습니다.</td>
+</tr>
+<tr>
+<td><mark>Skill</mark></td>
+<td>git에 정의되어 에이전트가 채택하는 재사용 가능한 기능 묶음(프롬프트 + 도구 + 도메인 전문 지식)입니다.</td>
+</tr>
+<tr>
+<td><mark>Tool</mark></td>
+<td>에이전트가 호출하는 기능입니다. 타입이 지정된 시그니처를 갖는 <a href="service-catalog_ko.html#apis-and-endpoints">API</a> 엔터티로 모델링합니다.</td>
+</tr>
+<tr>
+<td><mark>MCP Server</mark></td>
+<td>에이전트의 도구를 노출하는 서버입니다. 하위 유형이 MCP인 <a href="service-catalog_ko.html#services">Service</a> 엔터티로 모델링합니다.</td>
+</tr>
+</tbody>
+</table>
+<p>에이전트의 의존성과 에이전트가 읽는 데이터는 모두 하나의 리니지 그래프로 연결됩니다.</p>
+<pre><code class="language-text">repository ─▶ service (MCP) ─▶ api (tool) ◀─invokes─ aiAgent ─adopts─▶ skill ─requires─▶ api (tool)
+                                                        │
+                                                        └─reads──▶ dataset (upstream lineage)
+</code></pre>
+<h2 id="setup-prerequisites-and-permissions">설정, 사전 요구 사항, 권한</h2>
+<p>AI 에이전트, 스킬, 도구는 다른 자산과 마찬가지로 수집을 통해 채우거나 SDK/API로 직접 내보냅니다.
+SDK, CLI, LangChain 및 Google ADK에서의 자동 등록은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/agent-registry.md">API 튜토리얼</a>을 참고하세요. 이들을 탐색하고 관리하려면 사용자에게
+표준 엔터티 권한이 있어야 합니다.</p>
+<ul>
+<li><mark>View Entity Page</mark>: 에이전트, 스킬, 도구 프로필을 찾아 열 수 있습니다.</li>
+<li><mark>Edit Entity</mark>(및 관련 하위 권한): 소유권, 태그, 용어집 용어, 문서로 내용을 보강할 수 있습니다.</li>
+</ul>
+<p>조직에서 Agent Registry를 활성화하려면 DataHub 담당자에게 문의하세요.</p>
+<h2 id="using-the-agent-registry">Agent Registry 사용하기</h2>
+<h3 id="the-agent-profile">에이전트 프로필</h3>
+<p><mark>FX Risk Scoring Agent</mark> 같은 에이전트를 열면 프로필을 볼 수 있습니다. 프로필에는 에이전트의 역할, 사용하는 스킬과 도구,
+BigQuery, Snowflake, dbt에 걸쳐 읽는 데이터, 평가 점수, 호출량, 지연 시간 같은 신뢰성 지표가 표시됩니다. 소유권은
+팀(여기서는 Quant Risk Team)에 귀속되므로, 모든 에이전트에는 찾아서 책임을 물을 수 있는 소유자가 있습니다.</p>
+<h3 id="dependencies">의존성</h3>
+<p>에이전트의 의존성은 명시적이며 클릭해서 확인할 수 있습니다. 에이전트가 채택하는 <mark>스킬</mark>, 호출하는 <mark>도구</mark>,
+실행 기반이 되는 <mark>모델</mark>이 이에 해당합니다. 각각이 독립된 카탈로그 엔터티이므로, 새로운 팀은 에이전트를 처음부터 다시 만드는 대신
+이들을 찾아 재사용할 수 있습니다.</p>
+<h3 id="skills">스킬</h3>
+<p>스킬도 카탈로그 엔터티입니다. <mark>FX Risk Scoring skill</mark> 같은 스킬을 열면 정의, 신뢰할 수 있는 기준이 되는 사양,
+필요한 도구를 정확히 확인할 수 있습니다. 스킬은 팀이 다시 구현하지 않고 채택하는, 재사용 가능하고 검증된 기능입니다.</p>
+<h3 id="tools-signatures-and-contracts">도구, 시그니처, 계약</h3>
+<p>에이전트가 호출하는 모든 도구는 입력 매개변수와 출력 형태로 이루어진 <mark>타입 지정 시그니처</mark>를 갖는
+<a href="service-catalog_ko.html#apis-and-endpoints">API</a> 엔터티이며, 데이터셋과 같은 스키마 컴포넌트로 렌더링됩니다.
+이러한 도구를 노출하는 MCP 서버는 <a href="service-catalog_ko.html#services">Service</a> 엔터티로 카탈로그화되며, 각 서버는 전체 <mark>계약</mark>을
+그래프에 담고 있습니다. 계약은 실시간 도구 목록으로, 입력과 출력을 JSON Schema로 표현하고 그 자리에서 버전을 관리합니다. (REST API
+도구는 OpenAPI 사양을 같은 방식으로 렌더링합니다.) API, 서비스, 계약에 대한 전체 내용은 <a href="service-catalog_ko.html">Service Catalog</a>를 참고하세요.</p>
+<h3 id="lineage-to-your-data">데이터까지 이어지는 리니지</h3>
+<p>에이전트는 리니지 그래프에서 자신이 소비하는 BigQuery, Snowflake, dbt 테이블의 다운스트림에 위치합니다.
+따라서 데이터 영향 분석에 사용하는 것과 같은 <a href="lineage_ko.html">리니지</a> 그래프에서 에이전트가 읽는 데이터를 추적할 수 있고,
+리니지를 역방향으로 따라가 특정 테이블을 읽는 에이전트를 찾을 수도 있습니다.</p>
+<h3 id="versioning-and-change-history">버전 관리와 변경 기록</h3>
+<p>에이전트는 버전으로 관리됩니다. 서로 다른 버전이 프로덕션에서 나란히 실행되는 경우가 많으므로, <code>1.0</code>부터 <code>2.0</code>까지의 버전은
+<mark>버전 세트</mark>로 묶이고 최신 버전이 명확히 표시됩니다.</p>
+<p>또한 모든 변경 사항은 <mark>타임라인</mark>에 기록됩니다. 태그 변경, 소유권 업데이트, 평가 점수 상승, 새 문서, 버전 마일스톤 자체가 모두 포함됩니다.
+데이터 품질 기록과 마찬가지로, 에이전트에 대해서도 신뢰할 수 있는 완전한 AI 감사 추적을 제공합니다.</p>
+<h3 id="governance-across-lineage">리니지 전반의 거버넌스</h3>
+<p>에이전트가 리니지 그래프에 있으므로 거버넌스 자동화가 별도 설정 없이 에이전트까지 확장됩니다.
+<a href="https://github.com/datahub-project/datahub/blob/master/docs/automations/glossary-term-propagation.md">Glossary Term Propagation</a> 자동화를 켰다고 가정해 보겠습니다.
+누군가 소스 테이블 <code>fx-positions</code>를 <mark>Highly Confidential</mark>로 분류합니다. FX Risk Scoring Agent는 이 테이블을 소비하므로,
+DataHub가 분류를 에이전트로 전파하고, 에이전트는 리니지를 통해 상속받은 동일한 <mark>Highly Confidential</mark> 레이블을 갖게 됩니다.
+에이전트의 상태가 빨간색으로 바뀌고 검토를 위한 <a href="https://github.com/datahub-project/datahub/blob/master/docs/incidents/incidents.md">인시던트</a>가 열립니다.
+따라서 민감한 데이터가 AI 시스템에 도달하는 순간 이를 바로 확인할 수 있습니다.</p>
+<h2 id="additional-resources">추가 자료</h2>
+<h3 id="api-tutorials">API 튜토리얼</h3>
+<ul>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/agent-registry.md">AI 에이전트, 스킬, 도구 등록</a> — Python SDK, CLI,
+LangChain 및 Google ADK에서의 자동 등록</li>
+</ul>
+<h2 id="faq-and-troubleshooting">FAQ 및 문제 해결</h2>
+<p><mark>Agents 기능과 어떻게 다른가요?</mark></p>
+<p><a href="agents_ko.html">Agents</a> 기능은 작업을 자율적으로 실행하는 AI 에이전트를 <em>구축</em>하는 기능입니다. Agent
+Registry는 (DataHub에서 구축했든 다른 곳에서 구축했든) AI 에이전트를 거버넌스 대상 메타데이터로 <em>카탈로그화</em>하는 기능입니다.
+이를 통해 에이전트를 검색할 수 있고, 소유자를 지정하고, 버전을 관리하고, 에이전트가 다루는 데이터와 연결할 수 있습니다.</p>
+<p><mark>에이전트의 &quot;도구&quot;는 메타데이터 모델에서 무엇에 해당하나요?</mark></p>
+<p>도구는 <a href="service-catalog_ko.html#apis-and-endpoints">API</a> 엔터티입니다. Service Catalog가 REST 엔드포인트, gRPC 메서드, GraphQL 필드에
+사용하는 것과 같은 엔터티입니다. 덕분에 &quot;어떤 에이전트가 이 엔드포인트를 호출하는가&quot;를 일반적인 영향 분석으로 답할 수 있습니다.</p>
+<p><mark>DataHub 외부에서 구축한 에이전트도 카탈로그화할 수 있나요?</mark></p>
+<p>예. 에이전트는 네이티브(DataHub 관리형), 시스템(부트스트랩), <mark>외부</mark>(다른 플랫폼에서 카탈로그화) 유형이 될 수 있으며,
+어떤 유형이든 프로필, 리니지, 버전 관리, 거버넌스는 동일하게 동작합니다.</p>
+<h3 id="related-features">관련 기능</h3>
+<ul>
+<li><a href="service-catalog_ko.html">Service Catalog</a> — 서비스, API, 리포지토리, 애플리케이션</li>
+<li><a href="agents_ko.html">Agents</a> — 작업을 자율적으로 실행하는 AI 에이전트 구축</li>
+<li><a href="lineage_ko.html">Lineage</a> — 종단 간 의존성 추적과 영향 분석</li>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/automations/glossary-term-propagation.md">Glossary Term Propagation</a> — 리니지 전반의 자동 분류</li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

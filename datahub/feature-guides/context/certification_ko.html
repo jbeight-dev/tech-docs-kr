@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certification</title>
+<meta name="description" content="팀이 신뢰하는 데이터 자산과 문서를 표시해, 사람과 AI 에이전트가 어떤 소스에 의존해야 하는지 알 수 있게 합니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">Certification</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/certification.md">certification.md</a></span><span>원본 커밋: 4e3afa4</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="certification">Certification</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용 · 공개 베타</p></blockquote>
+<blockquote>
+<p><strong>정보: Context 애드온</strong></p>
+<p>Certification은 DataHub Cloud <mark>Context</mark> 애드온에 포함됩니다.</p>
+</blockquote>
+<p>대부분의 조직에는 어떤 질문의 답처럼 보이는 테이블, 대시보드, 문서가 여럿 있지만 실제 답은 하나뿐입니다. 인증(Certification)을 사용하면 데이터를 잘 아는 사람이 어느 것을 신뢰해야 하는지 지정할 수 있습니다. 자산이나 문서를 인증하면 DataHub는 그것이 나타나는 모든 곳에 표시를 남기고, 누가 왜 보증했는지 기록하며, 이 신호를 AI 에이전트에 전달합니다. 그러면 에이전트는 신뢰할 수 있는 소스를 바탕으로 답변을 구성하고, 그렇게 할 수 없을 때는 이를 알립니다.</p>
+<h2 id="how-certification-works">인증 동작 방식</h2>
+<ol>
+<li><mark>Certify</mark> 권한이 있는 사람이 자산이나 문서를 인증합니다. 이유를 설명하는 메모를 선택적으로 남길 수 있습니다.</li>
+<li>DataHub는 해당 페이지, 검색 결과, 리니지, 언급되는 모든 위치에서 이름 옆에 인증 표시를 보여 줍니다. 표시 위에 마우스를 올리면 인증한 사람, 시점, 메모를 볼 수 있습니다.</li>
+<li>AI 에이전트는 어떤 소스가 인증되었는지 확인하고 해당 소스를 우선해 답변을 구성합니다. Ask DataHub는 답변이 아무도 인증하지 않은 컨텍스트에 의존하는 경우에도 사용자에게 알려 주며, 자체 에이전트에도 같은 동작을 하도록 <a href="#using-certification-in-agent-responses">지침</a>을 제공할 수 있습니다.</li>
+</ol>
+<p>인증할 수 있는 대상은 다음과 같습니다.</p>
+<table>
+<thead>
+<tr>
+<th>범주</th>
+<th>인증할 수 있는 대상</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>데이터 자산</td>
+<td>데이터셋, 대시보드, 차트, 데이터 파이프라인, 데이터 태스크, 컨테이너</td>
+</tr>
+<tr>
+<td>시맨틱 계층</td>
+<td>메트릭과 시맨틱 모델</td>
+</tr>
+<tr>
+<td>컨텍스트</td>
+<td>생성된 문서를 포함한 <a href="context-documents_ko.html">컨텍스트 문서</a></td>
+</tr>
+</tbody>
+</table>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/certification-seal-hover.png"/>
+</p>
+<p><em>스크린샷: 데이터셋의 인증 표시와, 인증한 사람, 시점, 이유를 보여 주는 호버 카드.</em></p>
+<h2 id="who-can-certify">인증할 수 있는 사람</h2>
+<p>자산이나 문서를 인증하거나 인증을 제거하려면 해당 자산이나 문서에 대한 <mark>Certify</mark> 권한이 있어야 합니다.</p>
+<ul>
+<li><mark>Admins와 Editors</mark>는 기본적으로 모든 자산을 인증할 수 있습니다.</li>
+<li><mark>그 외의 사람</mark>은 자산 소유자를 포함해, 관리자가 <a href="https://github.com/datahub-project/datahub/blob/master/docs/authorization/policies.md">정책</a>에서 <mark>Certify</mark>를 부여해야 합니다. 정책으로 모든 자산이나 특정 도메인의 자산 같은 일부 자산에 대해 권한을 부여할 수 있으므로, 각 영역의 담당자가 해당 영역의 대상을 인증하도록 할 수 있습니다.</li>
+</ul>
+<p>자산 편집 권한에는 인증 권한이 포함되지 않습니다. 인증이 조직이 신뢰하는 사람의 의도적인 결정으로 남도록 하기 위해서입니다. 인증은 항상 인증한 사람의 이름으로 기록됩니다.</p>
+<h2 id="certifying-assets-and-documents">자산과 문서 인증하기</h2>
+<ul>
+<li><mark>자산 페이지에서:</mark> 헤더의 인증 아이콘을 클릭하거나 <mark>⋮</mark> 메뉴에서 <mark>Certify</mark>를 선택합니다. 메모를 추가하고 <mark>Certify</mark>를 클릭합니다.</li>
+<li><mark>문서에서:</mark> 페이지 오른쪽 상단의 인증 아이콘을 클릭합니다.</li>
+<li><mark>일괄 인증:</mark> <mark>Context &gt; Certification</mark>을 열고 <mark>Certify Assets</mark>를 클릭한 다음 인증할 자산을 검색해 선택합니다.</li>
+</ul>
+<p>메모에는 &quot;예약 매출의 기준 데이터입니다. 테스트 계정은 제외합니다.&quot;처럼 자산을 무엇에 신뢰할 수 있는지 작성합니다. 사람과 에이전트는 이 메모를 읽고 자산이 자신의 질문에 맞는지 판단합니다.</p>
+<p>인증을 제거하려면 인증 아이콘을 다시 클릭하거나 <mark>Remove certification</mark>을 선택합니다. 인증은 편집할 수 없습니다. 메모를 변경하려면 인증을 제거한 뒤 자산을 다시 인증하세요.</p>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/certification-certify-modal.png"/>
+</p>
+<p><em>스크린샷: 데이터셋 페이지에서 메모와 함께 인증하는 화면.</em></p>
+<h2 id="managing-certified-assets">인증된 자산 관리하기</h2>
+<p><mark>Context &gt; Certification</mark>에는 조직이 인증한 모든 항목이 항목별 인증자, 시점, 방법과 함께 나열됩니다. 유형이나 소스로 필터링하고, 이름으로 검색하고, 인증을 하나씩 또는 일괄로 제거할 수 있습니다.</p>
+<p>인증된 자산은 검색하는 모든 곳에서도 찾을 수 있습니다. <mark>Certification</mark>으로 필터링하거나 <a href="../views/overview_ko.html">View</a>에 <mark>Certification</mark>을 조건으로 추가하세요.</p>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/certification-page.png"/>
+</p>
+<p><em>스크린샷: 인증된 자산이 나열된 Certification 페이지.</em></p>
+<h2 id="how-ai-agents-use-certification">AI 에이전트의 인증 활용 방식</h2>
+<p>DataHub는 에이전트에 자산과 문서를 반환할 때 어떤 항목이 인증되었는지 알려 주며, 에이전트는 인증된 소스를 우선해 답변을 구성합니다. Ask DataHub는 답변이 아무도 인증하지 않은 컨텍스트에 의존하는 경우에도 사용자에게 알려 줍니다. DataHub의 MCP 서버로 연결된 에이전트도 같은 정보를 받지만, 사용자에게 알릴지는 각 에이전트의 지침에 따라 달라집니다. <a href="#using-certification-in-agent-responses">에이전트 응답에 인증 활용하기</a>를 참고하세요.</p>
+<p>인증은 신뢰가 가장 중요한 상황에서 에이전트에 도움이 됩니다.</p>
+<ul>
+<li><mark>Text-to-SQL:</mark> 여러 테이블이 질문에 답할 수 있을 때 에이전트는 인증된 테이블로 쿼리를 구성하며, 질문을 다루는 인증된 소스가 없으면 Ask DataHub가 사용자에게 알려 줍니다.</li>
+<li><mark>데이터 탐색:</mark> 누군가 데이터를 어디서 찾는지 물으면, 에이전트는 표현이 우연히 일치하는 사본보다 인증된 자산을 먼저 안내합니다.</li>
+</ul>
+<!-- TODO(certification-ranking): When certified sources rank higher in search, add:
+"Certified assets and documents also rank higher when agents search, so the sources your team vouches for are easier for agents to find. See [Certification & Trust Ranking](../../../managed-datahub/build-a-data-agent/key-concepts.md#certification--trust-ranking)." -->
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/certification-ask-datahub.png"/>
+</p>
+<p><em>스크린샷: Ask DataHub가 인증된 테이블을 바탕으로 답변하면서 인증되었음을 알리는 화면.</em></p>
+<h2 id="using-certification-in-agent-responses">에이전트 응답에 인증 활용하기</h2>
+<p>Ask DataHub는 별도 설정 없이 인증을 활용합니다. DataHub의 MCP 서버로 연결된 에이전트는 어떤 소스가 인증되었는지 볼 수 있지만, 사용자에게 어떻게 설명할지는 각 에이전트의 지침에 따라 달라집니다. 답변을 공유해도 되는지 항상 사용자에게 알리는 등 에이전트가 답변에서 인증을 설명하는 방식을 정확히 제어하려면, 인증을 해석하는 방법을 지침에 추가하세요. <a href="../agents_ko.html">커스텀 에이전트</a>의 지침이나 자체 에이전트가 사용하는 <a href="https://github.com/datahub-project/datahub/blob/master/docs/dev-guides/agent-context/skills.md">스킬</a>에 추가하면 됩니다.</p>
+<p>예를 들면 다음과 같습니다.</p>
+<pre><code class="language-text">## Qualifying responses through certification
+
+Each context document and data asset used in this flow is either certified or
+not. Certified assets are those that data team admins have explicitly identified
+as trustworthy.
+
+## Explaining unverified sources in answers
+
+When a response depends on sources that DataHub inferred automatically, rather
+than ones a person wrote, curated, or certified, qualify the response clearly,
+and say that it should be reviewed before it is fully trusted or shared
+publicly.
+
+## Explaining certified sources in answers
+
+When a response depends only on certified context documents and data assets,
+say that only certified sources were used to generate the answer, to help build
+trust with the users who rely on your answers.
+</code></pre>
+<h2 id="api-access">API 접근</h2>
+<p><a href="https://github.com/datahub-project/datahub/blob/master/docs/api/graphql/overview.md">DataHub GraphQL API</a>의 <code>updateCertification</code> 및 <code>batchUpdateCertification</code> mutation으로 프로그래밍 방식으로 인증하고 인증을 제거할 수도 있습니다.</p>
+<h2 id="faq">FAQ</h2>
+<p><mark>인증 아이콘이나 Certification 페이지가 보이지 않습니다.</mark>
+<mark>Certify</mark> 권한이 필요합니다. Certification 페이지를 사용하려면 모든 자산에 대한 권한도 있어야 합니다. 특정 도메인의 자산처럼 일부 자산만 인증할 수 있다면 해당 자산의 페이지에서 인증하세요.</p>
+<p><mark>인증이 만료되나요?</mark>
+아니요. 누군가 제거할 때까지 유지됩니다.</p>
+<p><mark>인증하면 자산에 접근할 수 있는 사람이 달라지나요?</mark>
+아니요. 인증은 신뢰 신호이며 접근 제어가 아닙니다.</p>
+<p><mark>자산이 변경되면 인증은 어떻게 되나요?</mark>
+아무 일도 일어나지 않습니다. 인증은 그대로 유지되므로, 정의가 변경되면 인증된 자산을 검토하세요.</p>
+<h2 id="related">관련 문서</h2>
+<ul>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/managed-datahub/build-a-data-agent/key-concepts.md#certification--trust-ranking">Build a Data Agent: Key Concepts</a></li>
+<li><a href="context-documents_ko.html">Context Documents</a></li>
+<li><a href="context-generation_ko.html">Context Generation</a></li>
+<li><a href="context-evals_ko.html">Context Evals</a></li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

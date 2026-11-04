@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataHub Compliance Form 만들기</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">DataHub Compliance Form 만들기</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/compliance-forms/create-a-form.md">create-a-form.md</a></span><span>원본 커밋: 5256377</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="create-a-datahub-compliance-form">DataHub Compliance Form 만들기</h1>
+<blockquote><p>기능 제공 범위: DataHub Core, DataHub Cloud</p></blockquote>
+<p>이 가이드에서는 Compliance Form을 만들고 할당하는 다음 과정을 설명합니다.</p>
+<ol>
+<li>새 Compliance Form 만들기</li>
+<li>Compliance Form의 <mark>Questions</mark> 작성</li>
+<li>Compliance Form의 <mark>Assets</mark> 할당</li>
+<li>Compliance Form의 <mark>Assignees</mark> 선택</li>
+<li>Compliance Form 게시</li>
+</ol>
+<blockquote>
+<p><strong>참고</strong></p>
+<p>DataHub UI에서 Compliance Form을 관리하는 기능은 DataHub Cloud에서만 사용할 수 있습니다. DataHub Core를 사용한다면 <a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/forms.md">Compliance Forms API 가이드</a>를 참고하세요.</p>
+</blockquote>
+<h3 id="prerequisites">사전 요구 사항</h3>
+<p>Compliance Form을 만들거나 편집하거나 제거하려면, 또는 자산에 할당하려면(동적 할당 필터 포함) <mark>Manage Compliance Forms</mark> 플랫폼 권한이 있어야 합니다.</p>
+<blockquote>
+<p><strong>참고: API 동등성</strong></p>
+<p>UI와 GraphQL mutation(<code>batchAssignForm</code>, <code>batchRemoveForm</code>, <code>createDynamicFormAssignment</code>)을 통해서는 <mark>Manage Compliance Forms</mark>만으로 양식을 할당할 수 있습니다. OpenAPI, Rest.li, CLI 메타데이터 이미터로 <code>forms</code> 또는 <code>dynamicFormAssignment</code> aspect를 직접 쓰려면 대상에 대한 <mark>Edit Entity</mark>도 추가로 필요합니다. 이러한 API는 모든 aspect 쓰기를 일반 엔터티 업데이트로 간주해 권한을 확인하기 때문입니다(REST API 권한 부여가 비활성화된 경우 제외). 자신에게 이미 할당된 양식을 완료하거나 검증할 때는 어떤 API에서도 <mark>Manage Compliance Forms</mark>가 필요하지 않습니다.</p>
+</blockquote>
+<h3 id="step-1-create-a-new-compliance-form">1단계: 새 Compliance Form 만들기</h3>
+<p>탐색 모음에서 <mark>Govern</mark> &gt; <mark>Compliance Forms</mark>로 이동합니다. <mark>+ Create</mark>를 클릭해 양식 작성을 시작합니다.</p>
+<p align="center">
+  <img 
+       width="90%"  
+       src="https://raw.githubusercontent.com/datahub-project/static-assets/refs/heads/main/imgs/compliance_forms/management/list-compliance-forms-before.png"
+       alt="View of all Compliance Forms"/>
+</p>
+<p>먼저 다음 세부 정보를 입력합니다.</p>
+<ol>
+<li>
+<p><mark>Name:</mark> Compliance Form의 목적을 명확히 전달하는 고유하고 설명적인 이름을 선택합니다. 예를 들면 <mark>&quot;PII Certification Q4 2024&quot;</mark>입니다.</p>
+<p><em><mark>전문가 팁:</mark> 이 이름은 작업을 할당받은 담당자에게 표시되므로, 양식의 의도가 효과적으로 전달되도록 명확하고 자세하게 작성하세요.</em></p>
+</li>
+<li>
+<p><mark>Description:</mark> Compliance Form의 목적을 설명하는 간결하면서 유익한 설명을 작성합니다. 이니셔티브의 중요성, 목표, 예상 완료 일정 같은 핵심 세부 정보를 포함하세요. 담당자가 프로세스에서 자신의 역할과 그 맥락 및 중요성을 이해하는 데 도움이 됩니다.</p>
+<p><em><mark>예시:</mark> &quot;이 Compliance Form은 PII가 포함된 모든 데이터셋을 2024년 4분기까지 검토하고 검증하기 위해 마련되었습니다. 조직 및 규제 요구 사항을 준수하려면 이 양식을 반드시 완료해야 합니다.&quot;</em></p>
+</li>
+<li>
+<p><mark>Type:</mark> 컴플라이언스 요구 사항에 따라 양식의 수집 유형을 지정합니다.</p>
+<ul>
+<li>
+<p><mark>Completion:</mark> 선택한 자산의 모든 필수 질문에 답변하면 양식이 완료된 것으로 간주됩니다. 기본적인 요구 사항 완료 사용 사례에 이 옵션을 권장합니다.</p>
+</li>
+<li>
+<p><mark>Verification:</mark> 선택한 자산의 모든 필수 질문에 답변하고 <mark>그리고</mark> 담당자가 응답을 명시적으로 &quot;검증&quot;해야만 양식이 완료된 것으로 간주됩니다. 담당자의 최종 승인이 필요해 응답의 정확성과 유효성을 확인받아야 할 때 이 옵션을 권장합니다.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>다음으로 <mark>Add Question</mark>을 클릭해 양식의 요구 사항 작성을 시작합니다.</p>
+</li>
+</ol>
+<p align="center">
+  <img
+       width="90%"  
+       src="https://raw.githubusercontent.com/datahub-project/static-assets/refs/heads/main/imgs/compliance_forms/management/create-compliance-form-add-question.png"
+       alt="Create a new Compliance Form"/>
+</p>
+<h3 id="step-2-build-questions-for-your-form">2단계: 양식의 질문 작성</h3>
+<p>다음으로 Compliance Form의 질문을 정의합니다. 질문은 선택한 자산에 관한 필수 정보를 수집하는 데 사용되며, 양식이 완료된 것으로 간주되려면 담당자가 질문을 완료해야 합니다.</p>
+<p>다음 5가지 질문 유형 중에서 선택할 수 있습니다.</p>
+<ul>
+<li><mark>Ownership:</mark> 선택한 자산에 하나 이상의 소유자를 할당하도록 요청합니다. 선택적으로 유효한 사용자, 그룹, 소유권 유형의 특정 집합으로 응답을 제한할 수 있습니다.
+<ul>
+<li><em>예: 이 데이터셋의 정확성을 보장할 책임은 누구에게 있나요?</em></li>
+</ul>
+</li>
+<li><mark>Domain:</mark> 자산에 도메인을 할당하며, 허용되는 도메인 집합을 미리 정의할 수 있습니다.
+<ul>
+<li><em>예: 이 대시보드는 어느 도메인에 속하나요? Sales, Marketing, Finance.</em></li>
+</ul>
+</li>
+<li><mark>Documentation:</mark> 자산 또는 컬럼(또는 둘 다)에 대한 문서를 제공합니다.
+<ul>
+<li><em>예: 이 데이터셋의 주요 사용 사례는 무엇인가요? 다른 사람들이 알아야 할 주의 사항은 무엇인가요?</em></li>
+</ul>
+</li>
+<li><mark>Glossary Terms:</mark> 자산 또는 컬럼(또는 둘 다)에 하나 이상의 용어집 용어를 할당하며, 허용되는 용어집 용어 집합을 미리 정의할 수 있습니다.
+<ul>
+<li><em>예: 이 자산에 어떤 유형의 개인 식별 정보(PII)가 포함되어 있나요? Email, Address, SSN 등.</em></li>
+</ul>
+</li>
+<li><mark>Structured Properties:</mark> 자산 또는 컬럼(또는 둘 다)에 커스텀 속성을 적용합니다.
+<ul>
+<li><em>예: 이 데이터셋은 언제 사용 중단되고 삭제되나요?</em></li>
+</ul>
+</li>
+</ul>
+<p>질문을 만들 때는 담당자가 이해하기 쉽도록 명확하고 간결한 제목을 사용합니다. 설명에는 응답을 안내하는 추가 컨텍스트나 지침을 포함합니다. 제목과 설명은 양식을 완료할 때 담당자에게 모두 표시되므로, 질문에 정확하고 자신 있게 답하는 데 필요한 구체적인 힌트나 세부 정보를 제공하세요.</p>
+<p align="center">
+  <img
+       width="50%"  
+       src="https://raw.githubusercontent.com/datahub-project/static-assets/refs/heads/main/imgs/compliance_forms/management/create-compliance-form-prompt.png"
+       alt="Create a new Compliance Form prompt"/>
+</p>
+<h3 id="step-3-assign-assets-to-your-compliance-form">3단계: Compliance Form에 자산 할당</h3>
+<p>담당자가 완료할 질문을 정의했으니 이제 이 작업의 범위에 포함되는 자산을 할당합니다.</p>
+<p><mark>Assign Assets</mark> 섹션에서 다음 단계에 따라 이 양식과 관련된 특정 자산 집합을 쉽게 지정할 수 있습니다.</p>
+<ol>
+<li>조건 또는 조건 그룹을 추가합니다</li>
+<li>다음과 같은 적절한 필터 유형을 선택합니다.
+<ul>
+<li>Asset Type(Dataset, Chart 등)</li>
+<li>Platform(Snowflake, dbt 등)</li>
+<li>Domain(Sales, Marketing, Finance 등)</li>
+<li>Assigned Owners</li>
+<li>Assigned Glossary Terms</li>
+</ul>
+</li>
+<li>필터를 <mark>All</mark>, <mark>Any</mark>, <mark>None</mark> 중 어떤 방식으로 적용할지 결정합니다</li>
+<li>관련 자산을 미리 보고 적절한 필터를 적용했는지 확인합니다</li>
+</ol>
+<p>예를 들어 <mark>Finance Domain</mark>에도 연결된 모든 <mark>Snowflake Datasets</mark>에 집중하도록 필터를 적용할 수 있습니다. 이렇게 하면 컴플라이언스 이니셔티브를 관리 가능한 단위로 나눌 수 있으므로 전체 데이터 생태계를 한 번에 처리하지 않아도 됩니다.</p>
+<p align="center">
+  <img 
+       width="90%"  
+       src="https://raw.githubusercontent.com/datahub-project/static-assets/refs/heads/main/imgs/compliance_forms/management/create-compliance-form-assign-assets.png"
+       alt="Assign assets to a Compliance Form"/>
+</p>
+<h3 id="step-4-select-assignees-to-complete-your-compliance-form">4단계: Compliance Form을 완료할 담당자 선택</h3>
+<p>질문과 할당된 자산을 정의했으면 다음 단계는 양식 완료를 담당하는 사용자 또는 그룹, 즉 담당자를 선택하는 것입니다.</p>
+<p><mark>Add Recipients</mark> 섹션에서 양식 완료 담당자를 결정합니다.</p>
+<ul>
+<li><mark>Asset Owners:</mark> 범위 내 자산 중 하나에 할당된 모든 사용자가 양식을 완료할 수 있습니다. 전체 사용자 집합을 알 수 없는 대규모 이니셔티브에 유용합니다. 선택적으로 할당을 특정 소유권 유형(Technical Owner, Data Steward, Business Owner, 커스텀 소유권 유형)으로 제한할 수 있습니다. 유형을 선택하지 않으면 유형과 관계없이 모든 소유자가 할당됩니다.</li>
+<li><mark>Specific Users and/or Groups:</mark> DataHub 내의 특정 사용자 또는 그룹 집합을 선택합니다. 자산의 소유권이 제대로 정의되어 있지 않을 때 유용합니다.</li>
+</ul>
+<p>또한 알림 기본 설정을 구성할 수 있습니다.</p>
+<ul>
+<li><mark>Send notifications to assignees when this form is published:</mark> 양식을 사용할 수 있게 되면 담당자에게 자동으로 알리려면 이 옵션을 선택합니다. 활성화하면 담당자는 DataHub Task Center에서 작업을 볼 수 있을 뿐 아니라(DataHub Cloud만 해당), 구성된 채널(DataHub Cloud의 이메일 또는 Slack)로도 알림을 받습니다.</li>
+</ul>
+<p align="center">
+  <img 
+       width="90%"  
+       src="https://raw.githubusercontent.com/datahub-project/static-assets/refs/heads/main/imgs/compliance_forms/management/create-compliance-form-add-users-or-groups.png"
+       alt="Assign recipients to a Compliance Form"/>
+</p>
+<h3 id="step-5-publish-your-form">5단계: 양식 게시</h3>
+<p>질문을 정의하고, 자산을 할당하고, 담당자를 선택하면 양식을 게시할 준비가 된 것입니다.</p>
+<p>게시하면 다음이 수행됩니다.</p>
+<ul>
+<li>담당자의 <mark>DataHub Task Center</mark>에 작업이 대기합니다(DataHub Cloud만 해당)</li>
+<li>알림을 활성화했고 담당자가 이메일 또는 Slack 알림을 구성했다면(DataHub Cloud만 해당) 해당 채널로 알림을 받습니다</li>
+<li>시간이 지나 새로운 자산이 양식의 대상이 되면, 새 소유자에게 자동으로 알림이 전송되고 양식이 할당됩니다</li>
+</ul>
+<p>양식을 게시하려면 <mark>Publish</mark>를 클릭하기만 하면 됩니다.</p>
+<blockquote>
+<p><strong>주의</strong></p>
+<p>양식을 게시한 뒤에는 질문을 변경하거나 추가할 수 <mark>없습니다</mark>. 다만 양식의 자산과 담당자 집합은 변경할 수 있습니다.</p>
+</blockquote>
+<p>아직 공개할 준비가 되지 않았나요? 걱정하지 마세요! <mark>Save Draft</mark> 옵션도 있습니다.</p>
+<p align="center">
+  <img
+       width="80%"  
+       src="https://raw.githubusercontent.com/datahub-project/static-assets/refs/heads/main/imgs/compliance_forms/management/create-compliance-form-publish.png"
+       alt="Publish a Compliance Form"/>
+</p>
+<h2 id="faq-and-troubleshooting">FAQ 및 문제 해결</h2>
+<p><mark>Compliance Form 질문에 답변하면 선택한 자산이 업데이트되나요?</mark></p>
+<p>예! Compliance Forms는 핵심 데이터 자산의 주요 속성을 대규모로 수집하고 업데이트하는 강력한 도구입니다. 질문에 답변하면 응답이 선택한 자산의 해당 속성을 직접 업데이트합니다.</p>
+<p><mark>Compliance Form은 기존 메타데이터와 어떻게 상호작용하나요?</mark></p>
+<p>양식 질문에서 참조하는 메타데이터가 자산에 이미 있으면, 담당자는 기존 값을 확인하거나, 덮어쓰거나, 추가 세부 정보를 덧붙일 수 있습니다.</p>
+<p><em>자세한 내용과 예시는 <a href="complete-a-form_ko.html#understanding-different-form-question-completion-states">양식 완료하기</a> 가이드에서 확인할 수 있습니다.</em></p>
+<p><mark>Completion Form과 Verification Form의 차이점은 무엇인가요?</mark></p>
+<p>두 양식 유형 모두 DataHub 사용자가 완료할 선택 및 필수 질문 집합을 구성하는 방법입니다. Verification Form을 사용하면 모든 필수 질문을 완료한 뒤 사용자에게 최종 검증 단계가 표시됩니다. 제출한 정보의 정확성에 대한 최종 확인으로 생각하면 됩니다.</p>
+<p><mark>하나의 자산에 여러 양식을 할당할 수 있나요?</mark></p>
+<p>물론입니다! 다만 할당된 모든 양식의 필수 질문을 모두 완료해야만 자산이 Documented 또는 Verified로 간주된다는 점에 유의하세요.</p>
+<p><mark>DataHub 사용자는 Compliance Form이 할당되었음을 어떻게 알 수 있나요?</mark></p>
+<p>담당자는 여러 방식으로 알림을 받습니다.</p>
+<ul>
+<li><mark>DataHub Task Center</mark>에 작업이 표시됩니다(DataHub Cloud만 해당)</li>
+<li>양식을 게시할 때 알림을 활성화했고 담당자가 이메일 또는 Slack 알림을 구성했다면(DataHub Cloud만 해당) 해당 채널로 알림을 받습니다</li>
+<li>새로운 자산이 기존 양식의 대상이 되면, 새 소유자에게 자동으로 알림이 전송되고 양식이 할당됩니다</li>
+</ul>
+<p><mark>양식 완료 진행 상황은 어떻게 추적하나요?</mark></p>
+<p>좋은 질문입니다. 선택한 자산 전반에 걸친 이니셔티브의 진행 상황을 직접 보여 주는 Compliance Forms Analytics를 작업 중입니다. 기대해 주세요!</p>
+<h3 id="api-tutorials">API 튜토리얼</h3>
+<ul>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/forms.md">Compliance Form API 가이드</a></li>
+</ul>
+<h3 id="related-features">관련 기능</h3>
+<ul>
+<li><a href="../properties/overview_ko.html">DataHub 구조화된 속성</a></li>
+</ul>
+<h2 id="next-steps">다음 단계</h2>
+<p>DataHub Compliance Form을 만들었으니 이제 <a href="complete-a-form_ko.html">Compliance Form을 완료</a>할 수 있습니다.</p>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

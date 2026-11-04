@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>논리 모델</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">논리 모델</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/logical-models/overview.md">overview.md</a></span><span>원본 커밋: 80abae8</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="logical-models">논리 모델</h1>
+<blockquote>
+<p><strong>참고: 지원되는 엔터티 유형</strong></p>
+<p>현재 논리 모델은 데이터셋과 그에 따른 스키마 필드만 지원합니다. 다른 엔터티 유형은 지원하지 않습니다.</p>
+</blockquote>
+<blockquote>
+<p><strong>참고: 권한</strong></p>
+<p>논리 모델을 만들고 <mark>컬럼</mark>을 편집하려면 <mark>Create Logical Models</mark> 플랫폼 권한이 필요하며, 이 권한은 기본적으로 Admin 역할에 부여됩니다. Admin은 커스텀 플랫폼 정책으로 다른 역할(예: Editor)에 이 권한을 부여할 수 있습니다. 물리 하위 항목을 연결하거나 연결 해제하려면 영향을 받는 데이터셋에 대한 일반 데이터셋 <mark>Edit</mark> 권한이 필요합니다. 논리 모델에 주석(태그, 용어집 용어, 소유자, 설명)을 달려면 일반 데이터셋 <mark>Edit</mark> 권한이 필요하고, 삭제하려면 <mark>Delete</mark> 권한이 필요합니다. 다른 데이터셋과 똑같습니다.</p>
+</blockquote>
+<h2 id="what-is-a-logical-model">논리 모델이란?</h2>
+<p>논리 모델은 소스 시스템의 특정 물리적 구현에 묶이지 않고 데이터베이스 테이블의 개념과 구조를 나타냅니다. 다른 DataHub 데이터셋 엔터티처럼 논리 모델은 데이터 유형과 설명을 포함해 컬럼을 기술하며, 태그, 용어, 소유자, 커스텀 속성 같은 다른 메타데이터를 가질 수 있습니다. 하지만 물리 데이터셋과 달리 논리 모델은 데이터가 저장되어 쿼리할 수 있는, 소스 시스템에 실제로 존재하는 테이블을 나타내지 않습니다.</p>
+<p>논리 모델은 같은 유형이나 형태의 데이터를 나타내거나 같은 데이터를 저장하는 테이블이 여러 개 있을 때 유용합니다. 같은 테이블이 Snowflake, Redshift, BigQuery 같은 여러 클라우드 제공자에 복제될 수 있는 멀티 클라우드 데이터 생태계에서 흔합니다. gold/silver/bronze 계층처럼 단일 시스템에 여러 복제본이 있는 경우에도 유용합니다. DataHub에서 이 관계를 드러내려면 논리 모델을 각 물리적 표현에 연결해야 합니다. DataHub Cloud 고객은 모든 물리 하위 항목의 메타데이터를 논리 모델 수준에서 관리할 수 있는 <a href="centralized-management_ko.html">중앙 집중식 관리</a>를 추가로 활용할 수 있습니다.</p>
+<h2 id="how-it-looks">표시 방식</h2>
+<blockquote>
+<p><strong>참고: 기능 플래그</strong></p>
+<p>UI에서 논리 모델을 보려면 <code>datahub-gms</code>에서 환경 변수 <code>LOGICAL_MODELS_ENABLED</code>를 <code>true</code>로 설정해야 합니다.</p>
+</blockquote>
+<p>예를 들어 Snowflake에 <code>Users</code> 테이블, BigQuery에 <code>AllUsers</code> 테이블, Apache Hive에 <code>UsersAttributes</code> 테이블이 있다고 가정해 보겠습니다. 세 테이블은 이름이 다르고 구조도 약간 다를 수 있지만, 논리적으로는 사용자별 특정 정보(컬럼)가 담긴 사용자 테이블이라는 같은 데이터를 나타냅니다. <code>Users</code>라는 논리 테이블을 만들고 각 물리 하위 항목에 연결합니다.</p>
+<p style="">
+    <img width="40%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/logical/relationship-diagram.png" />
+</p>
+<p>관계가 <a href="#creating-logical-models">생성</a>되면 논리 상위 항목과 물리 하위 항목 모두의 엔터티 사이드바에 표시됩니다.</p>
+<p style="">
+    <img width="40%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/logical/logical-parent.png" />
+    <img width="40%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/logical/physical-child.png" />
+</p>
+<p>논리 상위 항목과 물리 하위 항목의 컬럼도 연결할 수 있습니다.</p>
+<p style="">
+    <img width="40%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/logical/logical-parent-column.png" />
+    <img width="40%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/logical/physical-child-column.png" />
+</p>
+<h2 id="creating-logical-models">논리 모델 만들기</h2>
+<p>논리 모델은 다른 DataHub 데이터셋처럼 만듭니다. Python SDK 사용을 권장합니다.</p>
+<h3 id="from-the-ui">UI에서 만들기</h3>
+<p><code>LOGICAL_MODELS_ENABLED</code>를 사용하면 UI에서 논리 모델을 바로 만들 수도 있습니다. 검색 결과 컨트롤 모음의 <mark>Create Logical Model</mark> 작업을 사용하면 모델의 이름, 플랫폼, 컬럼을 입력하는 양식이 열립니다. 생성한 뒤에는 모델의 <mark>Schema</mark> 탭에서 컬럼을 추가하거나, 이름을 바꾸거나, 유형을 변경하거나, 삭제할 수 있습니다.</p>
+<blockquote>
+<p><strong>참고: 논리 모델 플랫폼</strong></p>
+<p>논리 모델은 엔터티 하위 유형으로 식별되지 않고, <mark>논리 플랫폼</mark>(논리 플랫폼으로 표시된 데이터 플랫폼)에 있는 데이터셋입니다. 플랫폼 선택기는 내장 <code>logical</code> 플랫폼을 포함한 기존 논리 플랫폼 또는 새 논리 플랫폼이 되는 커스텀 이름(최대 15자)을 제공합니다. 일반 비논리 플랫폼에는 논리 모델을 만들 수 없습니다. 논리 모델이 사용자에게 익숙한 시스템에 저장되어 있다면 해당 시스템용 커스텀 플랫폼을 만들고 커스텀 아이콘을 제공하기를 권장합니다. 그렇지 않으면 특별한 기본 아이콘이 있는 내장 <code>logical</code> 플랫폼 사용을 권장합니다.</p>
+</blockquote>
+<h3 id="create-dataset-in-logical-platform">&quot;logical&quot; 플랫폼에 데이터셋 만들기</h3>
+<pre><code class="language-python">    from datahub.sdk import DataHubClient, Dataset
+    client = DataHubClient.from_env()
+    dataset = Dataset(
+        platform=&quot;logical&quot;,
+        name=logical_model_name,
+        description=logical_model_description,
+        schema=[
+            # tuples of (field name / field path, data type, description)
+            (
+                &quot;zipcode&quot;,
+                &quot;varchar(50)&quot;,
+                &quot;This is the zipcode of the address. Specified using extended form and limited to addresses in the United States&quot;,
+            ),
+            (&quot;street&quot;, &quot;varchar(100)&quot;, &quot;Street corresponding to the address&quot;),
+            (&quot;date_column&quot;, &quot;date&quot;, &quot;Date of the last sale date for this property&quot;),
+        ],
+    )
+    client.entities.upsert(dataset)
+</code></pre>
+<h3 id="create-dataset-in-custom-platform">커스텀 플랫폼에 데이터셋 만들기</h3>
+<pre><code class="language-python">    # Create custom platform with custom logo
+    from datahub.sdk import DataHubClient
+    from datahub.emitter.mcp import MetadataChangeProposalWrapper
+    from datahub.metadata.schema_classes import DataPlatformInfoClass, PlatformTypeClass
+    from datahub.metadata.urns import DataPlatformUrn
+
+    urn = DataPlatformUrn(&quot;&lt;platformName&gt;&quot;).urn()
+    aspect = DataPlatformInfoClass(
+        name=&quot;&lt;platformName&gt;&quot;,
+        type=PlatformTypeClass.OTHERS,
+        datasetNameDelimiter=&quot;.&quot;,
+        logoUrl=&quot;&lt;url&gt;&quot;
+    )
+    client = DataHubClient.from_env()
+    client._graph.emit(MetadataChangeProposalWrapper(entityUrn=urn, aspect=aspect))
+
+    # Create dataset in custom platform
+    from datahub.sdk import DataHubClient, Dataset
+    client = DataHubClient.from_env()
+    dataset = Dataset(
+        platform=&quot;&lt;platformName&gt;&quot;,
+        ...  # See above
+    )
+    client.entities.upsert(dataset)
+</code></pre>
+<h2 id="linking-logical-models">논리 모델 연결하기</h2>
+<p>논리 -&gt; 물리 관계의 핵심은 <a href="https://docs.datahub.com/docs/generated/metamodel/entities/dataset#logicalparent"><code>LogicalParent</code></a> aspect로 만들어진다는 점입니다. 컬럼을 연결하려면 각 하위 스키마 필드 엔터티에도 이 aspect를 만들어야 합니다. 다만 사용 편의를 위해 OpenAPI 엔드포인트를 권장합니다.</p>
+<h3 id="from-the-ui-1">UI에서 연결하기</h3>
+<p>논리 모델 프로필의 <mark>Physical Children</mark> 사이드바 섹션은 물리 데이터셋을 연결(선택적 컬럼 매핑 포함)하고 기존 하위 항목을 연결 해제하는 작업을 제공합니다. 논리 모델의 컬럼을 호환되지 않게 편집하면(컬럼 제거, 이름 변경, 유형 변경) 변경된 컬럼을 참조하는 하위 컬럼 매핑만 해제됩니다. 하나 이상의 매핑이 남아 있는 한 하위 항목은 영향받지 않은 다른 컬럼 매핑과 함께 연결을 유지하며, 남은 매핑이 없을 때만 완전히 연결 해제됩니다. 컬럼 추가는 호환성을 깨지 않으며 기존 연결에 영향을 주지 않습니다. 호환되지 않는 변경 후 자동으로 다시 연결되지는 않으므로, 영향받은 하위 항목은 새 스키마에 맞게 수동으로 다시 연결해야 합니다.</p>
+<h3 id="openapi">OpenAPI</h3>
+<p>OpenAPI 엔드포인트는 단일 논리-물리 쌍에 대한 논리 -&gt; 물리 관계와, 지정된 경우 컬럼 간 컬럼 수준 관계를 만듭니다.</p>
+<pre><code class="language-shell">curl -X POST 'http://localhost:8080/openapi/v3/logical/&lt;physical_child_urn&gt;/relationship/physicalInstanceOf/&lt;logical_model_urn&gt;' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    &quot;&lt;logical_column_name_0&gt;&quot;: &quot;&lt;physical_column_name_0&gt;&quot;,
+    &quot;&lt;logical_column_name_1&gt;&quot;: &quot;&lt;physical_column_name_1&gt;&quot;,
+    &quot;&lt;logical_column_name_2&gt;&quot;: &quot;&lt;physical_column_name_2&gt;&quot;
+  }'
+</code></pre>
+<p>이러한 관계는 제거할 수도 있습니다(DataHub Cloud v0.3.15부터).</p>
+<pre><code class="language-shell">curl -X DELETE 'http://localhost:8080/openapi/v3/logical/&lt;physical_child_urn&gt;/relationship/physicalInstanceOf' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json'
+</code></pre>
+<h3 id="python-sdk">Python SDK</h3>
+<p>Python SDK로도 같은 엔드포인트를 쿼리할 수 있습니다.</p>
+<pre><code class="language-python">    from datahub.sdk import DataHubClient
+    client = DataHubClient.from_env()
+    url = f&quot;{client._graph.config.server}/openapi/v3/logical/{child_urn}/relationship/physicalInstanceOf/{parent_urn}&quot;
+    client._graph._post_generic(url, {column.parent_name: column.child_name for column in columns})
+</code></pre>
+<p>또는 <code>LogicalParent</code> aspect를 내보내 단일 관계를 만들 수 있습니다.</p>
+<pre><code class="language-python">    from datahub.sdk import DataHubClient
+    from datahub.emitter.mcp import MetadataChangeProposalWrapper
+    from datahub.metadata.schema_classes import EdgeClass, LogicalParentClass
+    client = DataHubClient.from_env()
+
+    client._graph.emit(MetadataChangeProposalWrapper(entityUrn=child_urn, aspect=LogicalParentClass(parent=EdgeClass(destinationUrn=parent_urn))))
+</code></pre>
+<p>관계를 제거할 수도 있습니다.</p>
+<pre><code class="language-python">    from datahub.sdk import DataHubClient
+    from datahub.emitter.mcp import MetadataChangeProposalWrapper
+    from datahub.metadata.schema_classes import EdgeClass, LogicalParentClass
+    client = DataHubClient.from_env()
+
+    client._graph.emit(MetadataChangeProposalWrapper(entityUrn=child_urn, aspect=LogicalParentClass(parent=None)))
+</code></pre>
+<h2 id="authorization">권한 부여</h2>
+<p>물리 데이터셋을 논리 상위 항목에 연결하거나 연결 해제하면 <mark>하위</mark> 엔터티(데이터셋, 그리고 컬럼 연결의 경우 스키마 필드)에 <a href="https://docs.datahub.com/docs/generated/metamodel/entities/dataset#logicalparent"><code>LogicalParent</code></a> aspect를 씁니다. 연결을 설정할 때는 하위 항목과 제안된 상위 항목 <mark>모두</mark>에 <mark>Edit Entity</mark>가 필요하고, 상위 항목을 지울 때는 하위 항목에만 <mark>Edit Entity</mark>가 필요합니다.</p>
+<p>각 측은 독립적으로 확인됩니다. <mark>데이터셋</mark>은 해당 데이터셋에 대한 <mark>Edit Entity</mark>가 필요하고, <mark>스키마 필드</mark>는 포함하는 데이터셋 또는 스키마 필드 URN에 대한 <mark>Edit Entity</mark>를 허용합니다. 하위 측과 상위 측은 서로 다른 권한 부여 유형을 사용할 수 있습니다(예: 물리 측은 데이터셋 정책, 논리 측은 스키마 필드 정책). OpenAPI 논리 모델 엔드포인트는 MCP를 일괄 쓰기 전에 같은 규칙을 적용합니다.</p>
+<p>이 규칙은 MCP 수집, GraphQL(<code>setLogicalParent</code>), OpenAPI 관계 엔드포인트에 적용됩니다.</p>
+<p><a href="https://github.com/datahub-project/datahub/blob/master/docs/authorization/policies.md#logical-parent-logicalparent-aspect">Metadata Policies — 파생 권한 부여 규칙</a>을 참고하세요.</p>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>용어집 용어 연결하기</title>
+<meta name="description" content="상속, 포함, 동의어, 반의어, 번역, 유효 값 같은 타입이 지정된 관계로 용어집 용어를 연결해 Business Glossary를 온톨로지로 바꿉니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">용어집 용어 연결하기</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/relating-glossary-terms.md">relating-glossary-terms.md</a></span><span>원본 커밋: 4e3afa4</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="relating-glossary-terms">용어집 용어 연결하기</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용 · 비공개 베타</p></blockquote>
+<p>관계는 용어집을 온톨로지로 바꾸는 요소입니다. 이 페이지에서는 UI와 API로 관계를 만드는 방법을 설명합니다.</p>
+<h2 id="prerequisites">사전 요구 사항</h2>
+<ul>
+<li>연결할 용어가 이미 있어야 합니다. 용어와 용어 그룹을 만드는 방법은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/glossary/business-glossary.md">Business Glossary</a>를 참고하세요.</li>
+<li>용어의 관계를 편집하려면 <mark>Manage Glossaries</mark> 플랫폼 권한 또는 해당 용어에 대한 <mark>Edit Entity</mark>가 필요합니다.</li>
+</ul>
+<h2 id="choosing-the-right-relationship">올바른 관계 선택하기</h2>
+<p>탐색, 전파, AI 도구는 관계 유형을 기준으로 동작하므로 올바른 유형을 선택할 필요가 있습니다.</p>
+<table>
+<thead>
+<tr>
+<th>표현하려는 내용</th>
+<th>사용할 관계</th>
+<th>방향</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B는 A의 더 구체적인 종류입니다</td>
+<td><mark>Inherits (Is A)</mark></td>
+<td>방향 있음</td>
+</tr>
+<tr>
+<td>A는 B로 구성됩니다(B는 A의 일부 또는 속성)</td>
+<td><mark>Contains (Has A)</mark></td>
+<td>방향 있음</td>
+</tr>
+<tr>
+<td>A와 B는 같은 의미입니다</td>
+<td><mark>Synonym</mark></td>
+<td>방향 없음</td>
+</tr>
+<tr>
+<td>A와 B는 반대 의미입니다</td>
+<td><mark>Antonym</mark></td>
+<td>방향 없음</td>
+</tr>
+<tr>
+<td>B는 A를 다른 언어나 방언으로 표현한 것입니다</td>
+<td><mark>Translates to</mark></td>
+<td>방향 있음</td>
+</tr>
+<tr>
+<td>B는 A의 허용 값 중 하나입니다</td>
+<td><mark>Valid value</mark></td>
+<td>방향 있음</td>
+</tr>
+<tr>
+<td>A와 B는 연결되어 있지만 위의 어느 것도 맞지 않습니다</td>
+<td><mark>Related to</mark></td>
+<td>방향 없음</td>
+</tr>
+</tbody>
+</table>
+<p><mark>방향이 있는</mark> 관계는 방향에 따라 다르게 읽히므로 역방향 레이블도 있습니다. <em>Inherits</em>는 <em>Inherited by</em>, <em>Contains</em>는 <em>Contained by</em>, <em>Translates to</em>는 <em>Translated from</em>, <em>Valid value</em>는 <em>Valid value for</em>로 읽힙니다. <mark>방향이 없는</mark> 관계는 양방향으로 같게 읽히며 한 번만 만들면 됩니다.</p>
+<p><mark>Related to</mark>는 다른 어떤 관계도 맞지 않을 때만 사용하세요. 두 용어가 연결되어 있다는 사실만 기록하고 어떻게 연결되었는지는 기록하지 않으므로 탐색에서 활용할 정보가 없습니다. 이 관계를 자주 사용하게 된다면 <a href="custom-relationships_ko.html">커스텀 관계 유형</a>이 필요할 가능성이 높습니다.</p>
+<h2 id="adding-a-relationship-in-the-ui">UI에서 관계 추가하기</h2>
+<ol>
+<li>연결할 용어집 용어를 엽니다.</li>
+<li><mark>Related Terms</mark> 탭으로 이동합니다.</li>
+<li><mark>+ Add Terms</mark>를 클릭합니다.</li>
+<li>관계 유형을 선택한 다음 하나 이상의 용어를 검색해 선택합니다.</li>
+<li><mark>Add</mark>를 클릭합니다.</li>
+</ol>
+<p align="center">
+  <img width="90%" src="https://raw.githubusercontent.com/datahub-project/datahub/master/docs-website/static/imgs/ontology/ontology-related-terms-tab.png" alt="The Related Terms tab on a glossary term, with relationship types as filter chips"/>
+</p>
+<p>관계 유형 선택기에는 내장 유형과 인스턴스에 정의된 모든 <a href="custom-relationships_ko.html">커스텀 관계 유형</a>이 나열됩니다.</p>
+<p align="center">
+  <img width="90%" src="https://raw.githubusercontent.com/datahub-project/datahub/master/docs-website/static/imgs/ontology/ontology-add-related-terms-modal.png" alt="The Add Related Terms modal with the relationship type picker open"/>
+</p>
+<p>탭은 관계를 유형별로 묶으며, 유형별 필터 칩에는 인스턴스에 정의된 <a href="custom-relationships_ko.html">커스텀 관계 유형</a>을 포함해 용어가 가진 관계 수가 표시됩니다.</p>
+<p>관계는 현재 보고 있는 용어를 기준으로 작성됩니다. 방향이 있는 관계에서는 해당 용어가 <em>소스</em>입니다. <em>Individual Customer</em> 페이지에서 <mark>Inherits → Customer</mark>를 추가하면 &quot;Individual Customer inherits Customer&quot;로 기록되며, <em>Customer</em> 페이지의 <mark>Inherited by</mark> 아래에 <em>Individual Customer</em>가 표시됩니다.</p>
+<p>대칭 관계(<mark>Synonym</mark>, <mark>Antonym</mark>, <mark>Related to</mark>)는 어느 쪽에서든 같게 읽히므로 편한 용어에서 한 번만 만들면 됩니다.</p>
+<p>관계를 제거하려면 <mark>Related Terms</mark> 탭에서 관련 용어에 마우스를 올리고 제거 작업을 사용합니다. 어느 쪽에서 제거하든 엣지가 삭제됩니다.</p>
+<h2 id="adding-relationships-via-the-api">API로 관계 추가하기</h2>
+<p><code>addRelatedTerms</code> GraphQL mutation은 소스 용어의 관계에 하나 이상의 용어를 추가합니다.</p>
+<pre><code class="language-graphql">mutation {
+  addRelatedTerms(
+    input: {
+      urn: &quot;urn:li:glossaryTerm:individualCustomer&quot;
+      termUrns: [&quot;urn:li:glossaryTerm:customer&quot;]
+      relationshipType: isA
+    }
+  )
+}
+</code></pre>
+<p><code>relationshipType</code> 값은 다음과 같습니다.</p>
+<table>
+<thead>
+<tr>
+<th>값</th>
+<th>관계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>isA</code></td>
+<td>Inherits</td>
+</tr>
+<tr>
+<td><code>hasA</code></td>
+<td>Contains</td>
+</tr>
+<tr>
+<td><code>synonymOf</code></td>
+<td>Synonym of</td>
+</tr>
+<tr>
+<td><code>antonymOf</code></td>
+<td>Antonym of</td>
+</tr>
+<tr>
+<td><code>translatesTo</code></td>
+<td>Translates to</td>
+</tr>
+<tr>
+<td><code>hasValue</code></td>
+<td>Valid value</td>
+</tr>
+<tr>
+<td><code>isRelatedTo</code></td>
+<td>Related to</td>
+</tr>
+</tbody>
+</table>
+<p>관계를 삭제하려면 같은 입력 형태로 <code>removeRelatedTerms</code>를 사용합니다.</p>
+<h3 id="bulk-loading-relationships">관계 일괄 로드</h3>
+<p>엣지가 몇 개를 넘어가면 UI를 클릭하는 대신 메타데이터로 관계를 로드하세요. <code>glossaryRelatedTerms</code> aspect는 용어의 모든 나가는 관계를 담으므로 용어당 한 번의 쓰기로 충분합니다.</p>
+<pre><code class="language-python">from datahub.emitter.mce_builder import make_term_urn
+from datahub.emitter.mcp import MetadataChangeProposalWrapper
+from datahub.ingestion.graph.client import DatahubClientConfig, DataHubGraph
+from datahub.metadata.schema_classes import GlossaryRelatedTermsClass
+
+graph = DataHubGraph(DatahubClientConfig(server=&quot;http://localhost:8080&quot;))
+
+graph.emit(
+    MetadataChangeProposalWrapper(
+        entityUrn=make_term_urn(&quot;individualCustomer&quot;),
+        aspect=GlossaryRelatedTermsClass(
+            isRelatedTerms=[make_term_urn(&quot;customer&quot;)],  # Inherits
+            hasRelatedTerms=[make_term_urn(&quot;customerId&quot;)],  # Contains
+            synonymOf=[make_term_urn(&quot;retailCustomer&quot;)],
+        ),
+    )
+)
+</code></pre>
+<blockquote>
+<p><strong>경고</strong></p>
+<p><code>glossaryRelatedTerms</code> aspect를 쓰면 용어의 기존 관계가 <mark>교체됩니다</mark>. 이미 관계가 있는 용어에 추가한다면 현재 aspect를 읽어 병합하세요.</p>
+</blockquote>
+<p><a href="https://docs.datahub.com/docs/generated/ingestion/sources/business-glossary">Business Glossary 수집 파일</a>에 <code>inherits</code>와 <code>contains</code> 관계를 직접 표현할 수도 있습니다. 용어집 자체를 버전 관리한다면 가장 깔끔한 방법입니다.</p>
+<h2 id="what-happens-next">이후 동작</h2>
+<p>추가한 모든 관계는 DataHub 메타데이터 그래프의 엣지로 구체화됩니다. 이후 다음이 가능합니다.</p>
+<ul>
+<li>온톨로지 그래프에 <mark>그려집니다</mark> — <a href="visualizing-your-ontology_ko.html">온톨로지 시각화하기</a>를 참고하세요.</li>
+<li>API와 AI 에이전트로 <mark>따라갈 수 있습니다</mark> — <a href="querying-your-ontology_ko.html">온톨로지 쿼리하기</a>를 참고하세요.</li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

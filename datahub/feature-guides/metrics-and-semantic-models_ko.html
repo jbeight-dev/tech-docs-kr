@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metrics &amp; Semantic Models</title>
+<meta name="description" content="비즈니스 메트릭 정의를 DataHub의 일급 엔터티로 만들어 거버넌스를 적용하고, 리니지와 연결하고, 검색으로 찾고, 풍부한 AI 컨텍스트를 제공합니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">Metrics &amp; Semantic Models</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/metrics-and-semantic-models.md">metrics-and-semantic-models.md</a></span><span>원본 커밋: 2328de3</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="metrics--semantic-models">Metrics &amp; Semantic Models</h1>
+<blockquote><p>기능 제공 범위: DataHub Core, DataHub Cloud</p></blockquote>
+<blockquote>
+<p><strong>주의: 베타</strong></p>
+<p>Metrics &amp; Semantic Models는 현재 <mark>베타(Beta)</mark>입니다. 기반 엔터티 모델은 안정적이지만 UI 환경, 리니지 시각화, 수집 범위는 활발히 개선되고 있습니다. 앞으로 몇 차례 릴리스에 걸쳐 사이드바 탐색, 엔터티 페이지 레이아웃, 리니지 렌더링이 계속 개선될 예정입니다.</p>
+</blockquote>
+<blockquote>
+<p><strong>팁: 모델링 지침을 찾고 있나요?</strong></p>
+<p>이 가이드는 Metrics &amp; Semantic Models가 <em>무엇</em>이고 <em>어떻게</em> 켜는지를 다룹니다. 비즈니스 개념을 모델링하는 권장 패턴(Glossary Term과 Metric을 언제 사용할지, Snowflake와 dbt에서 같은 KPI를 어떻게 표현할지, 메트릭 리니지가 처음부터 끝까지 어떻게 동작하는지)은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/metrics-and-semantic-models-best-practices.md">Metrics &amp; Semantic Models — 모범 사례</a>를 참고하세요.</p>
+</blockquote>
+<h2 id="why-use-metrics--semantic-models">Metrics &amp; Semantic Models를 사용하는 이유</h2>
+<p>DataHub Metrics는 <mark>메트릭 정의를 위한 카탈로그</mark>로, 팀이 비즈니스 측정값을 문서화하고, 찾고, 거버넌스하는 방식을 바꿉니다.</p>
+<ul>
+<li><mark>정의에 대한 단일 기준 정보</mark> — 각 메트릭을 소유자, 설명, 계산, 차원 컨텍스트와 함께 한 번만 카탈로그화해 &quot;어떤 매출 수치가 맞는가?&quot;라는 논쟁을 끝냅니다.</li>
+<li><mark>KPI에서 소스와 소비자까지 이어지는 리니지</mark> — 모든 메트릭을 읽는 논리 데이터셋을 거쳐 그 바탕이 되는 물리 테이블과 컬럼까지, 그리고 이를 소비하는 Charts, Dashboards, Datasets까지 추적합니다.</li>
+<li><mark>AI를 위한 컨텍스트</mark> — 모든 메트릭에 동의어, 자연어 지침, 예시 질문을 연결해, 에이전트와 Ask DataHub가 추측하는 대신 카탈로그화된 정의를 기준으로 자연어 질문을 해석하게 합니다.</li>
+<li><mark>다른 자산과 같은 거버넌스</mark> — Metrics와 Semantic Models는 완전한 DataHub 엔터티입니다. 소유자, 도메인, 태그, 용어집 용어, 구조화된 속성, 문서를 Datasets와 같은 방식으로 연결합니다.</li>
+<li><mark>이식 가능하고 도구에 종속되지 않는 모델</mark> — 이 모델은 모든 시맨틱 계층의 메트릭을 받아들이도록 설계되었으므로(현재 Snowflake Semantic Views와 dbt, 알파 단계인 Cube와 MicroStrategy, 로드맵에 있는 Databricks metric views와 추가 BI 도구 메트릭), 카탈로그에 투자하는 것이 하나의 도구에 베팅하는 일이 아닙니다. <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ossie-compatibility.md">Apache Ossie</a>와의 필드 수준 중복은 별도로 문서화되어 있습니다.</li>
+</ul>
+<h2 id="whats-included">포함된 항목</h2>
+<p>이 기능에는 두 가지 새로운 엔터티 유형이 포함됩니다.</p>
+<h3 id="semantic-model">Semantic Model</h3>
+<p>Semantic Model은 데이터셋 그룹, 데이터셋 간의 관계(즉, 허용되는 조인 패턴), 해당 데이터셋에서 파생할 수 있는 차원과 메트릭을 정의합니다. 그 위에서 계산되는 메트릭을 뒷받침하는 차원 컨텍스트 역할을 합니다.</p>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/metrics-and-semantic-models/semantic-model-entity.png" alt="Semantic Model entity page"/>
+</p>
+<p>각 Semantic Model 페이지에는 다음이 포함됩니다.</p>
+<ul>
+<li><mark>Governance</mark> — 이름, 설명, 소유자, 도메인, 태그, 구조화된 속성, 용어집 용어.</li>
+<li><mark>Datasets</mark> — 모델이 노출하는 논리 데이터셋(각각 <code>Semantic Model Dataset</code> 하위 유형의 완전한 DataHub Dataset).</li>
+<li><mark>Relationships</mark> — 모델의 논리 데이터셋 간 조인 경로와 카디널리티, 선택적 AI 컨텍스트 힌트.</li>
+<li><mark>Related Metrics</mark> — 이 모델이 뒷받침하는 모든 메트릭.</li>
+<li><mark>Definition</mark> — 왕복 변환과 디버깅을 위해 그대로 보존된 소스 플랫폼 DDL / YAML(예: Snowflake <code>CREATE SEMANTIC VIEW</code> 문).</li>
+<li><mark>AI Context</mark> — LLM 지원 탐색을 위한 동의어, 자연어 지침, few-shot 예시.</li>
+<li><mark>Lineage</mark> — 모델의 구성원 데이터셋과 메트릭을 둘러싼 경계 상자. 홉은 Semantic Model 자체가 아니라 이러한 구성원(및 그 물리/BI 이웃)을 거칩니다.</li>
+</ul>
+<h3 id="metric">Metric</h3>
+<p>Metric은 <code>total_revenue</code>, <code>daily_active_users</code>, <code>conversion_rate</code> 같은 명명된 비즈니스 측정값의 SQL 계산을 명시적으로 정의하며, 선택적으로 <mark>AI Context</mark>를 포함해 에이전트가 동의어, 메트릭이 답해야 할 예시 질문, 샘플 쿼리를 이해하도록 돕습니다.</p>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/metrics-and-semantic-models/metric-entity.png" alt="Metric entity page"/>
+</p>
+<p>각 Metric 페이지에는 다음이 포함됩니다.</p>
+<ul>
+<li><mark>Expression</mark> — 메트릭을 계산하는 SQL로, 하나 이상의 방언(<code>ANSI_SQL</code>, <code>SNOWFLAKE</code>, <code>MDX</code>, <code>TABLEAU</code>, <code>DATABRICKS</code>, <code>MAQL</code>, <code>OTHER</code>)을 사용합니다.</li>
+<li><mark>Semantic Model</mark> — 이 메트릭이 계산되는 모델.</li>
+<li><mark>Derived From / Related Metrics</mark> — 상위 메트릭과 의미상 동급 메트릭(예: <code>total_revenue</code>와 <code>customer_count</code>에서 파생된 <code>revenue_per_customer</code>).</li>
+<li><mark>AI Context</mark> — 동의어(<code>revenue</code>, <code>topline</code>, <code>gross</code>), 지침, 샘플 질문.</li>
+<li><mark>Governance</mark> — 이름, 설명, 소유자, 도메인, 태그, 구조화된 속성, 용어집 용어.</li>
+<li><mark>Lineage</mark> — 업스트림으로는 메트릭이 읽는 논리 및 물리 데이터셋, 다운스트림으로는 이를 소비하는 Charts, Dashboards, Datasets. Semantic Model은 구성원을 둘러싼 경계 상자이며 체인의 홉이 아닙니다.</li>
+</ul>
+<h3 id="semantic-model-datasets">Semantic Model Datasets</h3>
+<p>Semantic Model이 노출하는 모든 논리 데이터셋은 그 자체로 하위 유형이 <code>Semantic Model Dataset</code>인 완전한 <mark>Dataset</mark> 엔터티입니다. 즉, 각 논리 데이터셋에는 dbt Sources, Looker Views, Snowflake Dynamic Tables와 똑같이 자체 스키마, 거버넌스 표면, 리니지 그래프, 검색 결과가 있습니다.</p>
+<p>각 필드에는 <code>DIMENSION</code>(그룹화/필터링 속성), <code>MEASURE</code>(집계 가능한 숫자 값), <code>FILTER</code>(명명된 불리언 조건자) 중 무엇인지 식별하는 <mark>시맨틱 주석</mark>과 기반 SQL 표현식, 측정값의 경우 집계 함수가 포함됩니다.</p>
+<h2 id="prerequisites">사전 요구 사항</h2>
+<p><mark>DataHub Cloud 고객</mark>: Metrics &amp; Semantic Models를 사용하려면 <mark>DataHub Cloud 2.1.0 이상</mark>이 필요합니다. 이 기능은 <mark>2.3.0</mark>부터 기본적으로 켜져 있으며, 조직에서 끄려면 DataHub 담당자에게 문의하세요.</p>
+<p><mark>DataHub Core(OSS) 배포</mark>: <mark>DataHub Core v1.7.0 이상</mark>에서 사용할 수 있습니다. 이 기능은 <mark>v1.8.0</mark>부터 기본적으로 켜져 있습니다. UI에서 Metrics를 숨기려면 GMS 서비스에 <code>METRICS_ENABLED=false</code>를 설정합니다.</p>
+<p>GraphQL app-config 쿼리로 플래그를 확인합니다.</p>
+<pre><code class="language-graphql">{
+  appConfig {
+    featureFlags {
+      metricsEnabled
+    }
+  }
+}
+</code></pre>
+<p>왼쪽 탐색 사이드바에 <code>Beta</code> 배지와 함께 <mark>Metrics</mark> 섹션이 표시됩니다.</p>
+<h2 id="ingesting-metrics">메트릭 수집</h2>
+<h3 id="from-snowflake-semantic-views">Snowflake Semantic Views에서 수집</h3>
+<p>DataHub의 Snowflake 커넥터는 <mark>Snowflake Semantic Views</mark>에서 Semantic Models와 Metrics를 직접 내보냅니다.</p>
+<p>Snowflake recipe에서 활성화합니다.</p>
+<pre><code class="language-yaml">source:
+  type: snowflake
+  config:
+    account_id: ...
+    username: ...
+    include_technical_schema: true
+
+    semantic_views:
+      enabled: true # ingest Semantic Views at all
+      emit_semantic_model_entities: null # tri-state — see below
+      column_lineage: true # physical→logical column lineage
+</code></pre>
+<p><code>emit_semantic_model_entities</code> 제어 옵션에는 세 가지 상태가 있습니다.</p>
+<table>
+<thead>
+<tr>
+<th>값</th>
+<th>동작</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>null</code>(기본값)</td>
+<td>자동 감지합니다. Metrics가 활성화된 DataHub Cloud ≥ 2.1.0에서는 SM/Metric 엔터티를 내보냅니다. 그 외(이전 Cloud, 명시적 옵트인이 없는 OSS/자체 호스팅, 연결 없는 실행)에서는 기존 <code>Semantic View</code> 데이터셋으로 대체됩니다.</td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td>SM/Metric 내보내기를 요청합니다. Cloud에서는 서버와 플래그가 지원하면 적용되며, OSS에서는 운영자가 이러한 엔터티를 등록하는 서버를 실행해야 합니다.</td>
+</tr>
+<tr>
+<td><code>false</code></td>
+<td>서버가 새 엔터티를 지원하더라도 기존 <code>Semantic View</code> 데이터셋 동작을 강제합니다.</td>
+</tr>
+</tbody>
+</table>
+<p>Snowflake Semantic Views는 Snowflake의 네이티브 기능입니다. Semantic Views 위에 Cortex Analyst 통합도 사용한다면 이 통합은 Snowflake Enterprise Edition 이상으로 제한되지만, Semantic Views를 DataHub에 카탈로그화하는 작업은 Cortex에 의존하지 않습니다.</p>
+<h3 id="from-cube-and-microstrategy">Cube와 MicroStrategy에서 수집</h3>
+<p><a href="https://docs.datahub.com/docs/generated/ingestion/sources/cube">Cube</a>와 <a href="https://docs.datahub.com/docs/generated/ingestion/sources/microstrategy">MicroStrategy</a> 소스도 Semantic Models와 Metrics를 내보낼 수 있습니다. recipe에 <code>emit_semantic_model_entities: true</code>를 설정하세요. 둘 다 알파 단계입니다.</p>
+<h3 id="from-the-datahub-python-sdk">DataHub Python SDK에서 내보내기</h3>
+<p>상위 수준 SDK 빌더(<code>datahub.sdk.SemanticModel</code>, <code>.Metric</code>, <code>.SemanticModelDataset</code>)를 사용해 스크립트나 커넥터에서 프로그래밍 방식으로 메트릭과 시맨틱 모델을 내보냅니다.</p>
+<pre><code class="language-python">from datahub.sdk import (
+    DataHubClient,
+    DialectExpressionInput,
+    Metric,
+    SemanticModel,
+)
+
+client = DataHubClient(server=&quot;...&quot;, token=&quot;...&quot;)
+
+model = SemanticModel(
+    platform=&quot;snowflake&quot;,
+    path=&quot;analytics&quot;,
+    id=&quot;orders_model&quot;,
+    name=&quot;Orders Model&quot;,
+    description=&quot;Sales analytics semantic model&quot;,
+    datasets=[...],
+    relationships=[...],
+)
+
+metric = Metric(
+    platform=&quot;snowflake&quot;,
+    path=&quot;analytics.orders_model&quot;,
+    id=&quot;total_revenue&quot;,
+    name=&quot;Total Revenue&quot;,
+    description=&quot;Sum of order amounts.&quot;,
+    semantic_model=model.urn,
+    expression=DialectExpressionInput(
+        dialect=&quot;SNOWFLAKE&quot;,
+        expression=&quot;SUM(orders.amount)&quot;,
+    ),
+)
+
+for mcp in [*model.as_mcps(), *metric.as_mcps()]:
+    client.entities.upsert(mcp)
+</code></pre>
+<p>전체 튜토리얼과 참조: <a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/semantic-models.md">Semantic Models &amp; Metrics SDK 가이드</a>.</p>
+<h2 id="exploring-metrics">메트릭 탐색</h2>
+<h3 id="browse">찾아보기</h3>
+<p>왼쪽 탐색의 <mark>Metrics</mark> 항목을 클릭하면 Semantic Model별로 그룹화된 찾아보기 트리가 있는 랜딩 페이지 <code>/metrics</code>가 열립니다. 모델을 펼치면 해당 모델이 뒷받침하는 메트릭을 볼 수 있습니다. 소유자, 도메인, 태그, 플랫폼으로 필터링하고 정렬합니다.</p>
+<!-- SCREENSHOT: Metrics landing page with the browse tree expanded and a Semantic Model highlighted. -->
+<h3 id="search">검색</h3>
+<p>Metrics와 Semantic Models는 <mark>전역 검색</mark>과 <mark>검색창 자동 완성</mark>에 표시됩니다. 표시 이름, 설명, 플랫폼으로 검색하고, <mark>Type</mark> 필터로 Metrics 또는 Semantic Models로 좁힙니다. Semantic Model별로 그룹화된 메트릭을 탐색하는 가장 좋은 방법은 여전히 전용 <mark><code>/metrics</code></mark> 찾아보기 트리입니다. Browse V2에는 이러한 엔터티 유형이 나열되지 않으므로 Search 또는 <code>/metrics</code>를 사용하세요.</p>
+<h3 id="lineage">리니지</h3>
+<p>Metric의 Lineage 탭에는 <mark>업스트림</mark> 측에 메트릭이 읽는 데이터셋(및 그 물리 소스)이, <mark>다운스트림</mark> 측에 이를 소비하는 Charts, Dashboards, Datasets가 표시됩니다. 파생 메트릭은 Metric 간 홉으로 표시됩니다.</p>
+<p>Semantic Model은 구성원 데이터셋과 메트릭을 둘러싼 <mark>경계 상자</mark>로, 이들을 시각적으로 묶지만 그 자체가 리니지 그래프의 홉은 아닙니다. Semantic Model의 Lineage 탭을 열면 상자 안에 구성원이 그려지며, 구성원을 펼치면 물리 및 BI 이웃이 나타납니다.</p>
+<p>Impact Analysis는 엔터티 수준에서 양방향으로 동작합니다. 컬럼 수준 영향 분석(물리 컬럼에서 모든 다운스트림 메트릭 필드까지)은 아직 로드맵에 있습니다.</p>
+<h2 id="governance">거버넌스</h2>
+<p>Metrics와 Semantic Models는 DataHub의 표준 거버넌스 표면을 재사용합니다.</p>
+<ul>
+<li><mark>Owners</mark> — 사용자, 그룹, 역할별로 소유권을 할당합니다.</li>
+<li><mark>Domains</mark> — 메트릭을 비즈니스 도메인(Sales, Marketing, Finance 등)으로 묶습니다.</li>
+<li><mark>Tags &amp; Glossary terms</mark> — 데이터셋에 사용하는 것과 같은 분류 체계를 적용합니다. <code>Certified</code>, <code>Deprecated</code>, PII 태그가 예상대로 동작합니다.</li>
+<li><mark>Structured properties</mark> — 타입이 지정된 메타데이터(메트릭 가산성, 메트릭 종류, 측정값 형태 등)로 모델을 확장합니다.</li>
+<li><mark>Documentation &amp; links</mark> — 긴 형식의 문서와 조직의 지식.</li>
+</ul>
+<h2 id="ai-context">AI Context</h2>
+<p>모든 Semantic Model, Metric, 시맨틱 주석이 달린 필드에는 <mark>AI Context</mark> 레코드를 포함할 수 있습니다.</p>
+<ul>
+<li><mark>Synonyms</mark> — 메트릭을 부르는 다른 이름(<code>ARPU</code> ↔ <code>revenue_per_customer</code>).</li>
+<li><mark>Instructions</mark> — LLM이 메트릭을 해석하거나 쿼리할 때 사용할 자연어 지침.</li>
+<li><mark>Examples</mark> — 메트릭의 사용 방식을 보여 주는 샘플 질문이나 SQL 스니펫.</li>
+<li><mark>Custom instructions</mark> — 임의의 구조화된 힌트.</li>
+</ul>
+<p>향후 릴리스에서는 AI Context가 Ask DataHub와 카탈로그를 기반으로 하는 모든 에이전트에 바로 제공되어, URN이 아닌 자연어 참조로 메트릭 정의를 찾을 수 있게 됩니다.</p>
+<h2 id="whats-coming-next">향후 계획</h2>
+<p>Metrics 환경에 적극적으로 투자하고 있습니다. 단기 작업은 다음과 같습니다.</p>
+<ul>
+<li>에이전트 워크플로 중에 에이전트가 가져올 수 있도록 하는 <mark>DataHub MCP를 통한 Metrics &amp; Semantic Models</mark>.</li>
+<li><mark>추가 수집 소스.</mark> Snowflake Semantic Views와 dbt를 넘어 Databricks Unity Catalog metric views, Sigma, BI 도구 측정값까지 확장합니다.</li>
+<li><mark>소스 컬럼에서 메트릭까지 이어지는 컬럼 수준 리니지.</mark> 컬럼에서 메트릭까지 완전한 영향 분석으로, 원시 컬럼 변경이 어떤 KPI에 영향을 주는지 확인합니다.</li>
+<li><mark>리니지 시각화 개선.</mark> 더 깔끔한 노드 레이블, 접힌 중간 노드, 그래프 노이즈를 줄이는 Semantic Model 컨테이너 뷰.</li>
+<li><mark>AI 네이티브 탐색.</mark> Ask DataHub가 동의어와 표현식 인식 SQL을 사용해 자연어 질문을 카탈로그화된 메트릭 정의로 해석합니다.</li>
+</ul>
+<h2 id="faq">FAQ</h2>
+<p><mark>DataHub가 메트릭 값을 쿼리할 수 있나요?</mark>
+아니요. DataHub는 계산, 차원 컨텍스트, 리니지, 거버넌스 등 메트릭 <em>정의</em>를 위한 카탈로그입니다. 값 계산과 시각화는 BI 도구나 시맨틱 계층에서 수행합니다.</p>
+<p><mark>Metrics를 사용하려면 Snowflake가 필요한가요?</mark>
+아니요. Python SDK로 모든 소스에서 Semantic Models와 Metrics를 내보낼 수 있습니다. Snowflake Semantic Views는 바로 사용할 수 있는 첫 번째 수집 경로이며, 더 많은 경로를 준비 중입니다.</p>
+<p><mark>이 기능이 출시되기 전에 수집한 기존 Snowflake Semantic Views는 어떻게 되나요?</mark>
+DataHub에 기존 <code>Semantic View</code> 데이터셋으로 유지됩니다. 새 모델로 이전할 준비가 되면 <code>datahub migrate snowflake-semantic-views</code> CLI가 거버넌스(소유자, 도메인, 태그, 용어집 용어, 문서, 사용 중단, 애플리케이션, 컬럼 수준 태그/용어)를 새 Semantic Model 및 Metric URN으로 복사합니다. 마이그레이션은 자동이 아니므로, DataHub 담당자에게 문의해 전환을 계획하세요. 리니지와 정책은 CLI로 마이그레이션되지 않습니다. 이후 <code>emit_semantic_model_entities: true</code>로 Snowflake 수집을 실행해 구조적 aspect를 채우세요.</p>
+<p><mark>메트릭은 환경별로 구분되나요?</mark>
+아니요. Metric URN은 의도적으로 환경 한정자(<code>PROD</code>, <code>STAGING</code> 등)를 생략합니다. PROD와 STAGING의 <code>total_revenue</code>는 같은 메트릭 엔터티로 해석됩니다. 플랫폼 간 메트릭(예: dbt와 Snowflake 모두에 정의된 같은 측정값)은 URN에 플랫폼이 인코딩되므로 별개로 유지됩니다.</p>
+<p><mark>메트릭에 커스텀 속성(예: 가산성, 측정값 형태)을 추가할 수 있나요?</mark>
+예. Metrics는 Structured Properties, 즉 타입이 지정되고 거버넌스로 제어되며 검색 패싯을 지원하는 커스텀 필드를 지원합니다. 아직 일급 스키마 필드로 만들 정도는 아닌 플랫폼별 메타데이터에 사용하세요.</p>
+<hr />
+<h2 id="related">관련 문서</h2>
+<ul>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/metrics-and-semantic-models-best-practices.md">Metrics &amp; Semantic Models — 모범 사례</a> — 권장 모델링 패턴, 플랫폼 간 메트릭 표현 방법, 메트릭 리니지의 전체 동작 방식</li>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/semantic-models.md">Semantic Models &amp; Metrics SDK 튜토리얼</a></li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

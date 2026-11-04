@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>범위 지정 MCP 서버</title>
+<meta name="description" content="DataHub Cloud에서 고유한 도구, 지침, 뷰, 연결 URL을 갖춘 범위 지정 커스텀 MCP 서버를 만듭니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">범위 지정 MCP 서버</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/scoped-mcp-servers.md">scoped-mcp-servers.md</a></span><span>원본 커밋: ea01094</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="scoped-mcp-servers">범위 지정 MCP 서버</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용</p></blockquote>
+<blockquote>
+<p><strong>정보: Context 애드온</strong></p>
+<p>범위 지정 MCP 서버는 DataHub Cloud <mark>Context</mark> 애드온에 포함됩니다.</p>
+</blockquote>
+<h2 id="overview">개요</h2>
+<p>기본 DataHub MCP 엔드포인트는 관리형 도구 전체를 노출합니다. <mark>범위 지정 MCP 서버(Scoped MCP servers)</mark>를 사용하면 플랫폼 관리자가 특정 사용 사례의 AI 에이전트나 채팅 어시스턴트에 맞춘 커스텀 서버를 추가로 만들 수 있으며, 각 서버에는 전용 URL이 있습니다.</p>
+<p>커스텀 MCP 서버별로 다음을 할 수 있습니다.</p>
+<ul>
+<li><mark>도구 표시 및 숨기기</mark> — MCP 서버 기반 에이전트에 노출할 도구와 작업을 결정합니다.</li>
+<li><mark>커스텀 서버 지침 제공</mark> — MCP 서버를 사용하는 에이전트가 활용하는 기본 지침을 사용자 지정합니다.</li>
+<li><mark>특정 데이터 자산 및 컨텍스트 문서 노출</mark> — 검색과 조회를 특정 데이터 자산과 컨텍스트 문서로 제한하는 DataHub Search View를 선택적으로 제공해 신호와 노이즈를 분리합니다.</li>
+</ul>
+<p>클라이언트는 기본 서버와 같은 방식(OAuth 또는 개인 액세스 토큰)으로 연결하되, 범위 지정 URL을 가리킵니다. 클라이언트 설정과 인증은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/mcp.md">MCP 서버 가이드</a>를 참고하세요.</p>
+<h2 id="prerequisites">사전 요구 사항</h2>
+<ul>
+<li>Context 애드온이 있는 DataHub Cloud</li>
+<li><mark>Manage platform settings</mark> 권한(플랫폼 관리자)</li>
+</ul>
+<h2 id="create-a-scoped-mcp-server">범위 지정 MCP 서버 만들기</h2>
+<blockquote>
+<p><strong>정보: 관리자 전용</strong></p>
+<p>플랫폼 설정 관리 권한이 있는 사용자만 MCP 서버를 만들거나 편집할 수 있습니다.</p>
+</blockquote>
+<ol>
+<li><mark>Settings → AI → MCP Servers</mark>로 이동합니다.</li>
+<li><mark>Enable MCP Servers</mark>(페이지 상단의 마스터 스위치)가 켜져 있는지 확인합니다.</li>
+<li><mark>Create</mark>를 클릭합니다.</li>
+</ol>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/features/feature-guides/mcp/mcp-servers-management.png" alt="MCP Servers management page in Settings → AI"/>
+</p>
+<p><em>스크린샷: MCP Servers 관리 페이지(기본 + 범위 지정 서버, 마스터 스위치, Create).</em></p>
+<ol start="4">
+<li>다음을 입력합니다.
+<ul>
+<li><mark>Name</mark> — 표시 이름(예: <code>Finance MCP Server</code>)</li>
+<li><mark>Slug</mark> — 경로에 사용되는 URL 안전 ID(예: <code>finance</code>). 생성 후에는 변경할 수 없습니다.</li>
+<li><mark>Description</mark>(선택 사항)</li>
+<li><mark>Base instructions</mark> / <mark>Custom instructions</mark> — 이 범위에서 에이전트가 동작하는 방식</li>
+<li><mark>Tools</mark> — 노출할 도구를 선택합니다. 비워 두면 모든 도구를 노출합니다</li>
+<li><mark>Scope to View</mark>(선택 사항) — 검색과 조회를 저장된 View로 제한합니다</li>
+</ul>
+</li>
+<li>양식에 표시된 <mark>Connection URL</mark>을 복사합니다(예: <code>https://&lt;tenant&gt;.acryl.io/mcp/finance</code>).</li>
+<li>저장합니다.</li>
+</ol>
+<p>범위 지정 서버의 <mark>Tools</mark>에는 표준 도구 외에 다음을 포함할 수 있습니다.</p>
+<ul>
+<li><mark>Evals</mark>: <a href="context/context-evals_ko.html">Context Evals</a>를 나열, 실행, 보고하는 도구입니다. 기본 서버에는 절대 노출되지 않습니다.</li>
+<li><mark>Agents</mark>: 아래를 참고하세요.</li>
+</ul>
+<h2 id="expose-a-datahub-agent-as-a-tool">DataHub 에이전트를 도구로 노출하기</h2>
+<p>범위 지정 MCP 서버를 사용하면 DataHub 외부에서 DataHub <a href="agents_ko.html">에이전트</a>를 사용할 수 있습니다. 기본 서버는 에이전트를 노출하지 않으므로, 범위 지정 서버를 만들고 <mark>Tools</mark>에서 에이전트를 선택합니다. 그러면 MCP 클라이언트에 <code>ask_agent__finance-analyst</code>처럼 에이전트 이름을 딴 단일 도구로 표시됩니다. 외부 에이전트가 질문을 전달하면 DataHub 에이전트가 자체 지침, 범위, 플러그인을 사용해 답합니다.</p>
+<p>이렇게 하면 도메인 로직을 이를 검증하는 eval 및 컨텍스트와 함께 DataHub에 두면서, 사용자는 이미 사용 중인 도구를 계속 사용할 수 있습니다. 이 방식을 선택할 시점은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/managed-datahub/build-a-data-agent/connect-to-datahub-agent.md">Build a Data Agent</a>를 참고하세요.</p>
+<h2 id="connect-a-client-to-a-scoped-server">범위 지정 서버에 클라이언트 연결하기</h2>
+<p>기본 서버와 다른 것은 URL뿐입니다. 전송 방식과 인증은 동일합니다.</p>
+<blockquote>
+<p><strong>주의: <code>mcp.datahub.com</code>이 아닌 테넌트 URL을 사용하세요</strong></p>
+<p><code>https://mcp.datahub.com/mcp</code>는 항상 테넌트의 <mark>기본</mark> 서버로 연결되며, 이를 통해 범위 지정 서버를 선택할 수 없습니다. 대신 <mark>Settings → AI → MCP Servers</mark>의 <mark>Connection URL</mark>(예: <code>https://&lt;tenant&gt;.acryl.io/mcp/finance</code>)을 사용하세요.</p>
+</blockquote>
+<p>URL을 직접 조합하지 말고 복사한 다음, 아래에서 사용 중인 클라이언트의 단계를 따르세요.</p>
+<details>
+  <summary>Claude(웹 및 데스크톱)</summary>
+<ol>
+<li><mark>Customize → Connectors</mark>를 엽니다.</li>
+<li><mark>+</mark>를 클릭한 다음 <mark>Add custom connector</mark>를 클릭합니다.</li>
+<li><mark>Name</mark>: 범위를 식별할 수 있게 지정합니다(예: <code>DataHub — Finance</code>). 여러 개를 나란히 실행할 수 있습니다.</li>
+<li><mark>Remote MCP server URL</mark>: 범위 지정 Connection URL입니다.</li>
+<li><mark>Advanced settings</mark>는 비워 둡니다. DataHub가 DCR로 클라이언트를 등록합니다.</li>
+<li><mark>Add</mark>를 클릭한 다음 <mark>Connect</mark>를 클릭하고 DataHub에 로그인합니다.</li>
+</ol>
+<p>URL이 테넌트를 식별하므로 Claude는 DataHub 도메인을 묻지 않습니다.</p>
+<p><mark>Team 및 Enterprise</mark>에서는 소유자가 <mark>Organization settings → Connectors</mark>에서 커넥터를 추가하고, 구성원은 <mark>Customize → Connectors</mark>에서 개별적으로 연결합니다.</p>
+</details>
+<details>
+  <summary>Claude Code</summary>
+<pre><code class="language-bash">claude mcp add --transport http datahub-finance https://&lt;tenant&gt;.acryl.io/mcp/finance
+</code></pre>
+<p>첫 번째 도구 호출은 <code>401</code>을 반환합니다. <code>/mcp</code>를 실행하고 서버를 선택한 뒤 <mark>Authenticate</mark>를 선택합니다. 공존할 수 있도록 각 서버의 이름을 다르게 지정하세요(<code>datahub-finance</code>, <code>datahub-sales</code>).</p>
+</details>
+<details>
+  <summary>Cursor</summary>
+<p><code>~/.cursor/mcp.json</code>(전역) 또는 <code>.cursor/mcp.json</code>(프로젝트)에 항목을 추가합니다.</p>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;datahub-finance&quot;: {
+      &quot;url&quot;: &quot;https://&lt;tenant&gt;.acryl.io/mcp/finance&quot;
+    }
+  }
+}
+</code></pre>
+<p>저장한 다음 브라우저에서 OAuth 흐름을 완료합니다.</p>
+</details>
+<details>
+  <summary>개인 액세스 토큰(서비스 계정, 무인 에이전트)</summary>
+<p>OAuth를 사용할 수 없는 클라이언트의 경우:</p>
+<pre><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;datahub-finance&quot;: {
+      &quot;command&quot;: &quot;npx&quot;,
+      &quot;args&quot;: [
+        &quot;-y&quot;,
+        &quot;mcp-remote&quot;,
+        &quot;https://&lt;tenant&gt;.acryl.io/mcp/finance&quot;,
+        &quot;--header&quot;,
+        &quot;Authorization: Bearer &lt;token&gt;&quot;
+      ]
+    }
+  }
+}
+</code></pre>
+<p>토큰을 프로비저닝하려면 <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/mcp.md#service-accounts-for-agentic-workflows">에이전트 워크플로용 서비스 계정</a>을 참고하세요.</p>
+</details>
+<h2 id="scoping-is-not-access-control">범위 지정은 접근 제어가 아닙니다</h2>
+<p>범위 지정 View는 에이전트가 기본적으로 보여 주는 내용을 바꿉니다. 누군가의 접근 권한을 회수하지는 않습니다. 같은 사용자가 기본 서버, UI, API로 범위 밖을 여전히 쿼리할 수 있습니다.</p>
+<p>사용자가 범위 밖의 데이터를 읽지 못하게 해야 한다면 <a href="https://github.com/datahub-project/datahub/blob/master/docs/authorization/policies.md">뷰 정책</a>으로 볼 수 있는 대상을 제한하고, 범위 지정 서버는 그 위의 사용 편의 계층으로 다루세요.</p>
+<h2 id="handling-missing-context">누락된 컨텍스트 처리</h2>
+<p><mark>Custom instructions</mark>에서 도구가 아무것도 반환하지 않을 때 에이전트의 동작 방식을 지정합니다. 기본적으로 에이전트는 일반 지식에 의존할 수 있으므로, 잘못된 답변이 무응답보다 나쁜 경우에는 이를 명시하세요.</p>
+<blockquote>
+<p>이 도구로 사용할 수 있는 재무 컨텍스트로만 질문에 답하세요. 도구가 질문과 관련된 자산, 문서, 쿼리를 반환하지 않으면 답할 컨텍스트가 없다고 말하고 누구에게 문의할지 제안하세요. 사전 지식으로 답하거나 도구가 반환하지 않은 값을 추론하지 마세요.</p>
+</blockquote>
+<p>이는 지침이며 보장이 아닙니다. 서버를 출시하기 전에 범위 밖으로 예상되는 질문으로 테스트하세요.</p>
+<h2 id="edit-an-mcp-server">MCP 서버 편집</h2>
+<ol>
+<li><mark>Settings → AI → MCP Servers</mark>로 이동합니다.</li>
+<li>서버(이름 링크)를 열거나 행 메뉴 → <mark>Edit</mark>를 사용합니다.</li>
+<li>필요에 따라 이름, 설명, 지침, 도구, View를 업데이트합니다. <mark>slug</mark>(따라서 연결 URL 경로)는 고정됩니다.</li>
+<li>저장합니다.</li>
+</ol>
+<p>다음도 할 수 있습니다.</p>
+<ul>
+<li>테이블에서 서버를 삭제하지 않고 <mark>활성화 또는 비활성화</mark></li>
+<li><mark>Default 서버 편집</mark>(slug 없음)으로 공유 <code>/mcp</code> 엔드포인트의 도구, 지침, View 변경</li>
+<li>범위 지정 서버 <mark>삭제</mark> — 연결 URL이 즉시 동작을 멈춥니다</li>
+</ul>
+<h2 id="troubleshooting">문제 해결</h2>
+<p><mark>에이전트가 볼 수 있어야 하는 테이블이나 문서를 찾지 못합니다.</mark>
+서버의 View에 포함되어 있지 않습니다. 자산이 도메인에 할당되어 있는지(또는 View의 다른 필터와 일치하는지), View에 문서가 포함되어 있는지 확인하세요. 컨텍스트 문서는 테이블과 마찬가지로 View 필터를 따릅니다.</p>
+<p><mark>에이전트 도구(예: <code>ask_agent__finance-analyst</code>)가 표시되지 않습니다.</mark>
+서버의 <mark>Tools</mark>에서 에이전트가 선택되어 있는지, 서버가 활성화되어 있는지, 클라이언트가 서버의 <mark>Connection URL</mark>을 사용하는지 확인하세요. <code>https://mcp.datahub.com/mcp</code>는 항상 기본 서버로 연결되며 범위 지정 서버로는 연결되지 않습니다.</p>
+<p><mark><code>datahub-sql-workflow</code> 스킬이 SQL 컨텍스트 도구가 없다고 보고합니다.</mark>
+서버의 <mark>Tools</mark> 목록에서 제외되어 있습니다. <mark>Tools</mark>를 비워 모두 포함하거나 SQL 컨텍스트 도구를 선택하세요. 이 도구에는 Context 애드온이 필요합니다.</p>
+<p><mark>첫 번째 도구 호출이 <code>401</code>을 반환합니다.</mark>
+클라이언트가 아직 로그인하지 않았습니다. Claude Code에서는 <code>/mcp</code>를 실행하고 서버를 선택한 뒤 <mark>Authenticate</mark>를 선택합니다. 다른 클라이언트는 연결할 때 로그인하라는 메시지를 표시합니다.</p>
+<p><mark>Connection URL이 동작을 멈췄습니다.</mark>
+서버가 비활성화되었거나 삭제되었습니다. 다시 활성화하거나 새 서버를 만드세요. 서버의 slug와 URL은 생성 후 변경할 수 없습니다.</p>
+<h2 id="next-steps">다음 단계</h2>
+<ul>
+<li>클라이언트 설정과 인증: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/mcp.md">DataHub MCP 서버</a></li>
+<li>사용자가 읽을 수 있는 대상 제한: <a href="https://github.com/datahub-project/datahub/blob/master/docs/authorization/policies.md">Policies</a></li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

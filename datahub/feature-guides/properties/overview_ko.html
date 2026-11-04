@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataHub Structured Properties 소개</title>
+<meta name="description" content="Structured Properties로 모든 DataHub 엔터티에 검증된 커스텀 메타데이터 필드를 추가해 거버넌스와 탐색 사용 사례를 지원합니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">DataHub Structured Properties 소개</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/properties/overview.md">overview.md</a></span><span>원본 커밋: 68fb10c</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="about-datahub-structured-properties">DataHub Structured Properties 소개</h1>
+<blockquote><p>기능 제공 범위: DataHub Core, DataHub Cloud</p></blockquote>
+<p>DataHub <mark>Structured Properties</mark>를 사용하면 DataHub의 모든 엔터티 유형에 검증된 커스텀 속성을 추가할 수 있습니다. Structured Properties로 조직 고유의 속성을 기반으로 데이터 탐색과 거버넌스를 구현할 수 있습니다.</p>
+<p align="center">
+  <img width="90%"  src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/properties/custom_and_structured_properties.png"/>
+</p>
+<h2 id="what-are-structured-properties">Structured Properties란?</h2>
+<p><mark>Structured Properties</mark>는 DataHub 환경을 사용자 지정해 메타데이터를 조직의 고유한 요구에 맞출 수 있는 강력한 방법입니다. Date, Integer, DataHub Asset, Text 같은 특정 속성 유형을 정의해 자산에 의미 있고 맥락에 맞는 속성을 적용할 수 있습니다. 허용 값 제한이나 특정 형식 적용 같은 검증 규칙은 일관성을 보장하면서도 비즈니스 용어, 워크플로, 우선순위를 반영할 유연성을 제공합니다.</p>
+<p>Structured Properties는 다음 자산 유형에 추가할 수 있습니다.</p>
+<ul>
+<li>Datasets, Columns, Tasks, Pipelines, Charts, Dashboards 등의 데이터 자산.</li>
+<li>Domains, Glossary Terms &amp; Groups, Data Products 등의 DataHub 엔터티.</li>
+</ul>
+<h3 id="key-features-of-structured-properties">Structured Properties의 주요 기능:</h3>
+<ol>
+<li><mark>타입이 지정된 필드:</mark> 속성에는 Date, Integer, URN, Text 같은 옵션을 포함해 명시적으로 타입이 지정됩니다.</li>
+<li><mark>허용 값:</mark> 값을 특정 형식이나 미리 정의된 허용 입력 목록으로 제한해 표준을 적용합니다.</li>
+<li><mark>대상 지정 적용:</mark> Structured Properties를 Datasets, Columns, Dashboards 같은 특정 자산 유형에 맞춰 조직의 데이터 관리 요구와 사용 맥락에 부합하게 할 수 있습니다.</li>
+</ol>
+<h3 id="display-settings">표시 설정</h3>
+<p>Structured Properties는 메타데이터 관리를 강화하는 여러 구성 옵션을 제공합니다.</p>
+<ul>
+<li><mark>Hide Property:</mark> DataHub 사용자가 속성 값을 볼 수 없어야 하는 사용 사례에 사용합니다.</li>
+<li><mark>Show in Search Filters:</mark> 사용자가 특정 속성 값을 기준으로 자산을 필터링할 수 있게 해 검색 가능성을 높입니다.</li>
+<li><mark>Customize Visibility:</mark> Asset Badge, Asset Sidebar, Dataset Schema 뷰의 Columns Table 등 Structured Property가 표시되는 위치를 제어합니다.</li>
+</ul>
+<h2 id="why-use-structured-properties">Structured Properties를 사용하는 이유</h2>
+<p>Structured Properties는 특히 다음이 필요한 조직에 유용합니다.</p>
+<ul>
+<li><mark>사용자 지정:</mark> 최종 사용자가 DataHub에서 자산을 찾는 방식을 사용자 지정합니다.</li>
+<li><mark>거버넌스와 컴플라이언스:</mark> 내부 또는 외부 표준 준수를 지원하는 방식으로 메타데이터를 수집합니다.</li>
+</ul>
+<p align="center">
+  <img width="90%"  src="https://raw.githubusercontent.com/datahub-project/static-assets/refs/heads/main/imgs/structured_properties/1-list-structured-properties.png"/>
+</p>
+<p>이러한 구성을 활용하면 팀은 메타데이터가 조직 정책을 준수하도록 보장하고 데이터 자산의 검색 가능성과 사용성을 높일 수 있습니다.</p>
+<h2 id="limitations">제한 사항</h2>
+<h3 id="value-size-for-text-and-rich-text-properties">Text 및 Rich Text 속성의 값 크기</h3>
+<p>문자열 기반 구조화된 속성 값(<mark>Text</mark>, <mark>Rich Text</mark>, <mark>Date</mark>, <mark>DataHub Entity / URN</mark>)은 Elasticsearch / OpenSearch keyword로 인덱싱됩니다. 각 값은 기본적으로 최대 <mark>32,766 UTF-8 바이트</mark>입니다(Lucene의 keyword term 제한).</p>
+<p><code>STRUCTURED_PROPERTIES_KEYWORD_MAX_LENGTH</code> / <code>structuredProperties.keywordMaxLength</code>(기본값 <code>32766</code>)로 제한을 구성합니다. 기본적으로 DataHub는 구성된 제한을 초과하는 쓰기를 검증 오류로 거부하므로, 너무 큰 값은 검색 인덱스에 도달하지 않습니다.</p>
+<p><code>STRUCTURED_PROPERTIES_DROP_OVERSIZED_KEYWORD_VALUES_FROM_INDEX</code> / <code>structuredProperties.dropOversizedKeywordValuesFromIndex</code>를 <code>true</code>(기본값 <code>false</code>)로 설정하면 해당 바이트 임곗값을 초과하는 값을 기본 스토리지에 저장하면서 Elasticsearch / OpenSearch 문서에서는 생략합니다. GraphQL과 OpenAPI 읽기는 저장된 값을 계속 반환하지만, 검색과 필터는 반환하지 않습니다. 바이트 임곗값 미만이지만 매핑의 <code>ignore_above</code> 문자 제한(<code>keywordMaxLength / 4</code>)을 초과하는 값은 문서 <code>_source</code>에 저장되어도 검색할 수 없는 상태로 남을 수 있습니다. 검색이나 필터링이 필요한 속성에는 더 짧은 값을 사용하세요. 큰 자유 형식 콘텐츠(긴 Markdown, HTML, 문서)는 구조화된 속성 값이 아니라 자산 문서 같은 다른 곳에 저장하세요.</p>
+<p>Number 속성에는 이 keyword 제한이 적용되지 않습니다.</p>
+<p>Search V3 템플릿이 <code>fieldValueScores</code>에서 숫자 속성을 지정하면 해당 속성이 검색 순위를 변경할 수 있습니다. 기본 제공 템플릿은 이를 지정하지 않습니다. 생략된 범위 값은 정의의 <code>score</code>에서 가져옵니다. <a href="https://github.com/datahub-project/datahub/blob/master/docs/developers/search-v3-design.md#numeric-property-scores">숫자 속성 점수</a>를 참고하세요.</p>
+<h2 id="next-steps">다음 단계</h2>
+<p>Structured Properties를 이해했으니 이제 <a href="create-a-property_ko.html">Structured Property를 만들</a> 수 있습니다.</p>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

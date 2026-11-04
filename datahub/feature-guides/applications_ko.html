@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataHub Applications 소개</title>
+<meta name="description" content="DataHub Cloud Applications는 관련 자산을 비즈니스 목적별로 묶어 소프트웨어 시스템과 서비스를 모델링하는 실험적인 방법을 제공합니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">DataHub Applications 소개</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/applications.md">applications.md</a></span><span>원본 커밋: a4bc0c8</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="about-datahub-applications">DataHub Applications 소개</h1>
+<blockquote><p>기능 제공 범위: DataHub Core, DataHub Cloud</p></blockquote>
+<p>DataHub Cloud v1.2.0에는 특정 비즈니스 목적에 부합하는 유사한 자산을 DataHub 안에서 묶는 방식인 <mark>Applications</mark>가 도입되었습니다.</p>
+<p>Applications는 DataHub 메타데이터 모델 계층에서 Domains와 Data Products 사이에 위치합니다.</p>
+<ul>
+<li><mark>Domains</mark>(가장 큼): 여러 목적을 가진 비즈니스 영역</li>
+<li><mark>Applications</mark>(중간): Domain 내의 단일 비즈니스 목적</li>
+<li><mark>Data Products</mark>(가장 작음): Application 내의 구체적인 데이터 제공물</li>
+</ul>
+<p>예를 들어 전자상거래 회사의 구조는 다음과 같을 수 있습니다.</p>
+<ul>
+<li><mark>Payments Domain</mark>: 비즈니스 전반의 결제 처리와 관련된 모든 것을 포함합니다</li>
+<li><mark>Refund Application</mark>: Payments Domain에서 고객 환불 처리에 특별히 사용되는 모든 자산을 묶으며, 다음을 포함합니다.
+<ul>
+<li>&quot;Daily Refund Payments&quot; <mark>Data Product</mark></li>
+<li>&quot;Daily Refund Failures&quot; <mark>Data Product</mark></li>
+<li>결제 파이프라인, 환불 처리 데이터셋 등의 지원 자산</li>
+</ul>
+</li>
+<li><mark>Fraud Detection Application</mark>: Payments Domain에서 사기 거래의 식별과 방지에 관련된 모든 자산을 묶으며, 다음을 포함합니다.
+<ul>
+<li>&quot;Real-time Fraud Alerts&quot; <mark>Data Product</mark></li>
+<li>&quot;Weekly Fraud Analytics Report&quot; <mark>Data Product</mark></li>
+<li>ML 모델, 위험 점수 데이터셋 등의 지원 자산</li>
+</ul>
+</li>
+</ul>
+<p>각 Application은 더 넓은 Payments Domain의 일부이면서 고유한 비즈니스 목적을 수행합니다.</p>
+<h2 id="why-use-applications">Applications를 사용하는 이유</h2>
+<p>Applications는 이미 내부적으로 이 개념을 사용하고 있으며 Domains와 Data Products 외에 추가적인 구조가 필요한 대규모 조직에 가장 적합합니다. 대부분의 팀에는 Domains와 Data Products부터 시작하기를 권장합니다.</p>
+<p>다음 사항을 염두에 두세요.</p>
+<ul>
+<li><mark>Applications는 Data Mesh 아키텍처의 일부가 아닙니다</mark> — 일부 대규모 조직에 유용한 추가 조직 계층이지만, Data Mesh를 도입하는 팀에는 적합하지 않습니다</li>
+<li><mark>Applications는 소프트웨어 서비스와 다릅니다</mark> — 서비스는 하나의 소프트웨어인 반면, DataHub의 Application은 하나의 비즈니스 목적을 중심으로 여러 데이터 자산을 묶습니다</li>
+</ul>
+<blockquote>
+<p><strong>참고</strong></p>
+<p><mark>대부분의 팀에는 Applications가 필요하지 않습니다</mark>. DataHub 사용자에게는 Domains와 Data Products만으로 충분한 경우가 많습니다.</p>
+</blockquote>
+<h2 id="prerequisites-and-permissions">사전 요구 사항과 권한</h2>
+<p>Applications를 사용하려면 다음 DataHub 권한이 필요합니다.</p>
+<ul>
+<li>새 Application을 만들거나 기존 Application을 편집하려면 Applications에 대한 <mark>Edit Entity</mark> 권한이 필요합니다.</li>
+<li>데이터 자산에 Application을 할당하려면 <mark>Edit Entity Applications</mark> 권한이 필요합니다.</li>
+<li>사용자에게 Applications를 표시할지 제어하려면 <mark>Manage Features</mark> 플랫폼 권한이 필요합니다.</li>
+</ul>
+<p>이러한 권한을 활용하는 커스텀 정책을 만드는 방법은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/authorization/policies.md">여기</a>에서 자세히 알아보세요.</p>
+<h2 id="using-applications">Applications 사용하기</h2>
+<h3 id="enabling-applications">Applications 활성화</h3>
+<p>Applications를 활성화하려면 DataHub 담당자와 함께 기능을 구성해야 합니다. 구성이 완료되면 <mark>Settings</mark> &gt; <mark>Appearance</mark>로 이동해 <mark>Show Applications</mark>를 켜세요.</p>
+<blockquote>
+<p><strong>참고</strong></p>
+<p>Applications는 기본적으로 비활성화되어 있습니다. 기능을 활성화하려면 DataHub 담당자에게 문의하세요.</p>
+</blockquote>
+<p align="center">
+  <img width="80%"  src="https://raw.githubusercontent.com/datahub-project/static-assets/master//imgs/applications/EnableApplicationsInSettings.png"/>
+</p>
+<h3 id="creating-an-application">Application 만들기</h3>
+<p>Application을 만들려면 먼저 DataHub 왼쪽 탐색 메뉴의 <mark>Applications</mark> 탭으로 이동합니다.</p>
+<p>Applications 페이지에서는 DataHub에 생성된 모든 Application의 목록을 볼 수 있습니다.</p>
+<p align="center">
+  <img width="80%"  src="https://raw.githubusercontent.com/datahub-project/static-assets/master//imgs/applications/ManageApplicationsScreen.png"/>
+</p>
+<p>새 Application을 만들려면 '+ Create Application'을 클릭합니다.</p>
+<p align="center">
+  <img width="80%"  src="https://raw.githubusercontent.com/datahub-project/static-assets/master//imgs/applications/CreateNewApplicationModal.png"/>
+</p>
+<p>양식에서 Application의 이름, 설명, 소유자를 지정할 수 있습니다. API로 Application을 만드는 방법은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/applications.md">이 튜토리얼</a>에서 자세히 알아보세요.</p>
+<h3 id="assigning-assets-to-an-application">Application에 자산 할당하기</h3>
+<p>UI를 사용하거나 API로 프로그래밍 방식으로 Application에 자산을 할당할 수 있습니다. UI에서는 Entity 사이드바나 Applications 페이지에서 Application을 추가할 수 있습니다.</p>
+<p align="center">
+  <img width="80%"  src="https://raw.githubusercontent.com/datahub-project/static-assets/master//imgs/applications/AddAssetsToApplication.png"/>
+</p>
+<p>API로 Application에 자산을 할당하는 방법은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/applications.md">이 튜토리얼</a>에서 자세히 알아보세요.</p>
+<h3 id="searching-by-application">Application으로 검색하기</h3>
+<p>Application을 만들면 검색창에서 찾을 수 있습니다.</p>
+<p align="center">
+  <img width="80%"  src="https://raw.githubusercontent.com/datahub-project/static-assets/master//imgs/applications/SearchForApplications.png"/>
+</p>
+<p>검색 결과를 클릭하면 Application 프로필로 이동하며, 여기에서 설명을 편집하고 소유자를 관리하고 Application 내부의 자산을 볼 수 있습니다.</p>
+<p align="center">
+  <img width="80%"  src="https://raw.githubusercontent.com/datahub-project/static-assets/master//imgs/applications/ApplicationAssetsTab.png"/>
+</p>
+<p>Application에 자산을 추가하면 검색 필터를 사용해 검색 결과를 특정 Application 내의 자산으로 제한할 수 있습니다.</p>
+<h3 id="api-tutorials">API 튜토리얼</h3>
+<ul>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/applications.md">Applications</a></li>
+</ul>
+<h3 id="related-features">관련 기능</h3>
+<ul>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/domains.md">Domains</a></li>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/dataproducts.md">Data Products</a></li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

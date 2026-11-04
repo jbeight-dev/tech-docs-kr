@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ask DataHub Plugins</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">Ask DataHub Plugins</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/overview.md">overview.md</a></span><span>원본 커밋: 884d673</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="ask-datahub-plugins">Ask DataHub Plugins</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용</p></blockquote>
+<blockquote>
+<p><mark>참고</mark>: Ask DataHub Plugins는 현재 <mark>비공개 베타(Private Beta)</mark>입니다. 이 기능을 활성화하려면 DataHub 고객 지원 담당자에게 문의하세요.</p>
+</blockquote>
+<p><mark>Ask DataHub Plugins</mark>를 사용하면 Snowflake, Databricks, BigQuery, dbt Cloud, GitHub, Glean 등의 외부 도구를 <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/mcp.md">Model Context Protocol(MCP)</a>을 통해 <a href="../ask-datahub_ko.html">Ask DataHub</a>에 직접 연결할 수 있습니다.</p>
+<p>플러그인으로 <a href="https://modelcontextprotocol.io/docs/concepts/transports">Streamable HTTP transport</a>를 지원하는 모든 MCP 호환 서버를 연결할 수 있습니다. 연결하면 Ask DataHub가 메타데이터 카탈로그와 함께 이러한 도구를 사용해 더 풍부한 질문에 답하고 여러 도구에 걸친 워크플로를 수행할 수 있습니다.</p>
+<h2 id="why-use-plugins">플러그인을 사용하는 이유</h2>
+<p>플러그인은 메타데이터만으로는 제공할 수 없는 강력한 기능을 제공합니다.</p>
+<ul>
+<li><mark>대화형 분석</mark>: DataHub에서 적합한 데이터를 찾은 다음 Snowflake, Databricks, BigQuery에서 직접 쿼리합니다. 이 모든 과정이 하나의 대화에서 이루어집니다. DataHub는 시맨틱 계층 역할을 하며, 쿼리를 실행하기 전에 AI를 적합한 테이블로 안내합니다.</li>
+<li><mark>도구 간 디버깅</mark>: 채팅을 떠나지 않고 dbt 실행 기록을 확인하고, Snowflake에서 테이블을 쿼리하고, GitHub에서 최근 코드 변경을 검토해 데이터 문제의 근본 원인을 찾습니다.</li>
+<li><mark>거버넌스 워크플로</mark>: DataHub에서 데이터 리니지를 확인하고, dbt에서 변환 로직을 확인하고, 접근 제어를 검토해 여러 시스템의 컨텍스트를 한데 모읍니다.</li>
+</ul>
+<h2 id="available-plugins">사용 가능한 플러그인</h2>
+<p>DataHub는 널리 쓰이는 도구를 위한 내장 플러그인 템플릿을 제공합니다. 내부 서비스, 커스텀 API, MCP 서버가 있는 도구 등 다른 MCP 서버에 연결하려면 <mark>Custom MCP</mark> 옵션을 사용하세요.</p>
+<table>
+<thead>
+<tr>
+<th>플러그인</th>
+<th>설명</th>
+<th>가이드</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Snowflake</mark></td>
+<td>Snowflake 데이터를 쿼리하고 탐색합니다</td>
+<td><a href="snowflake_ko.html">설정 가이드</a></td>
+</tr>
+<tr>
+<td><mark>Databricks</mark></td>
+<td>Databricks 데이터를 쿼리하고 탐색합니다</td>
+<td><a href="databricks_ko.html">설정 가이드</a></td>
+</tr>
+<tr>
+<td><mark>BigQuery</mark></td>
+<td>BigQuery 데이터를 쿼리하고 탐색합니다</td>
+<td><a href="bigquery_ko.html">설정 가이드</a></td>
+</tr>
+<tr>
+<td><mark>dbt Cloud</mark></td>
+<td>작업 실행, 모델 정의, 테스트 결과를 확인합니다</td>
+<td><a href="dbt_ko.html">설정 가이드</a></td>
+</tr>
+<tr>
+<td><mark>GitHub</mark></td>
+<td>리포지토리를 탐색하고, PR을 올리고, 이슈를 관리합니다</td>
+<td><a href="github_ko.html">설정 가이드</a></td>
+</tr>
+<tr>
+<td><mark>Glean</mark></td>
+<td>조직의 지식 베이스를 검색합니다</td>
+<td><a href="glean_ko.html">설정 가이드</a></td>
+</tr>
+<tr>
+<td><mark>Custom MCP</mark></td>
+<td>모든 MCP 호환 서버를 연결합니다</td>
+<td><a href="#configuring-a-custom-mcp-plugin">아래 참고</a></td>
+</tr>
+</tbody>
+</table>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/create_plugin_dialog.png"/>
+</p>
+<h2 id="how-it-works">동작 방식</h2>
+<p>플러그인은 두 단계 워크플로를 따릅니다.</p>
+<ol>
+<li><mark>관리자가 구성</mark>: <mark>Settings &gt; AI &gt; Plugins</mark>에서 MCP 서버에 연결해 플러그인을 구성합니다</li>
+<li><mark>사용자가 활성화</mark>: 개인 설정(<mark>Settings &gt; My AI Settings</mark>)이나 채팅 인터페이스에서 사용할 플러그인을 활성화합니다</li>
+</ol>
+<p>사용자가 플러그인을 활성화하면 Ask DataHub 대화 중에 해당 도구를 사용할 수 있습니다. AI 어시스턴트는 질문과 관련이 있을 때 이러한 도구를 자동으로 사용합니다.</p>
+<h2 id="admin-setup-configuring-plugins">관리자 설정: 플러그인 구성</h2>
+<blockquote>
+<p><strong>정보: 필요한 권한</strong></p>
+<p>플러그인을 구성하려면 <mark>Manage Platform Settings</mark> 권한이 있어야 합니다.</p>
+</blockquote>
+<h3 id="creating-a-plugin">플러그인 만들기</h3>
+<ol>
+<li><mark>Settings &gt; AI &gt; Plugins</mark>로 이동합니다</li>
+<li>오른쪽 상단의 <mark>+ Create</mark>를 클릭합니다</li>
+<li>내장 플러그인 템플릿(Snowflake, dbt Cloud, GitHub)을 선택하거나, 다른 도구의 경우 <mark>Custom MCP</mark>를 선택합니다</li>
+</ol>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/plugins_settings_page.png"/>
+</p>
+<h3 id="configuring-a-custom-mcp-plugin">Custom MCP 플러그인 구성</h3>
+<p><mark>Custom MCP</mark>를 사용하면 Notion이나 Glean 같은 서드파티 도구, 팀에서 구축한 내부 서비스, MCP로 노출된 기타 API 등 모든 MCP 호환 서버를 연결할 수 있습니다. 서버는 <a href="https://modelcontextprotocol.io/docs/concepts/transports">Streamable HTTP transport</a>를 지원해야 합니다.</p>
+<p>Custom MCP 플러그인을 만들 때 다음을 입력합니다.</p>
+<table>
+<thead>
+<tr>
+<th>필드</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Name</mark></td>
+<td>플러그인의 표시 이름(모든 사용자에게 표시)</td>
+</tr>
+<tr>
+<td><mark>Description</mark></td>
+<td>이 플러그인이 제공하는 기능에 대한 간단한 설명</td>
+</tr>
+<tr>
+<td><mark>MCP Server URL</mark></td>
+<td>원격 MCP 서버의 URL</td>
+</tr>
+<tr>
+<td><mark>Authentication Type</mark></td>
+<td>사용자가 MCP 서버에 인증하는 방식(<a href="#authentication-types">아래 참고</a>)</td>
+</tr>
+<tr>
+<td><mark>Instructions for the AI Assistant</mark></td>
+<td>이 플러그인을 사용할 때 Ask DataHub에 제공하는 커스텀 지침(선택 사항)</td>
+</tr>
+</tbody>
+</table>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/create_custom_mcp_plugin.png"/>
+</p>
+<h3 id="authentication-types">인증 유형</h3>
+<p>플러그인은 세 가지 인증 메커니즘을 지원합니다.</p>
+<h4 id="none-public-api">None(공개 API)</h4>
+<p>인증이 필요하지 않습니다. 자격 증명이 필요 없는 공개 MCP 서버에 사용합니다.</p>
+<h4 id="shared-api-key-system-wide">Shared API Key(시스템 전체)</h4>
+<p>모든 사용자가 하나의 API 키를 공유합니다. 관리자가 설정 중에 키를 입력하며, 이 키가 모든 사용자의 요청에 사용됩니다. 단일 서비스 계정이 적합한 도구에 가장 알맞습니다.</p>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/auth_shared_api_key.png"/>
+</p>
+<h4 id="user-api-key-each-user-provides-their-own">User API Key(사용자별 개별 입력)</h4>
+<p>각 사용자가 플러그인을 활성화할 때 자신의 API 키를 입력합니다. 이를 통해 사용자별 접근 제어와 감사 추적을 보장합니다. 플러그인에 연결할 때 키를 입력하라는 메시지가 표시됩니다.</p>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/auth_user_api_key.png"/>
+</p>
+<h4 id="user-oauth-each-user-authenticates">User OAuth(사용자별 인증)</h4>
+<p>각 사용자가 플러그인을 활성화할 때 OAuth로 인증합니다. 관리자가 OAuth 제공자(client ID, client secret, authorization URL, token URL, 스코프)를 구성하면, 사용자는 표준 OAuth 로그인 흐름을 거쳐 연결합니다.</p>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/auth_user_oauth.png"/>
+</p>
+<h3 id="testing-the-connection">연결 테스트</h3>
+<p>플러그인을 구성한 뒤 저장하기 전에 <mark>Test Connection</mark>을 클릭해 MCP 서버에 연결할 수 있는지와 자격 증명이 유효한지 확인합니다.</p>
+<h3 id="custom-instructions">커스텀 지침</h3>
+<p><mark>Instructions for the AI Assistant</mark> 필드에서 Ask DataHub가 플러그인을 사용하는 방법에 대한 지침을 제공할 수 있습니다. 예를 들면 다음과 같습니다.</p>
+<ul>
+<li><em>&quot;사용자가 매출이나 고객 메트릭에 관해 물으면 이 플러그인으로 Snowflake를 쿼리하세요.&quot;</em></li>
+<li><em>&quot;데이터 품질을 보고하기 전에 항상 dbt 테스트 결과를 확인하세요.&quot;</em></li>
+</ul>
+<p>이 지침은 플러그인이 활성화될 때마다 AI 컨텍스트에 주입됩니다.</p>
+<h2 id="user-setup-enabling-plugins">사용자 설정: 플러그인 활성화</h2>
+<p>관리자가 플러그인을 구성하면 모든 사용자가 자신의 Ask DataHub 환경에서 활성화할 수 있습니다.</p>
+<h3 id="from-personal-settings">개인 설정에서 활성화</h3>
+<ol>
+<li><mark>Settings &gt; My AI Settings</mark>로 이동합니다</li>
+<li>관리자가 구성한 사용 가능한 모든 플러그인 목록이 표시됩니다</li>
+<li>플러그인을 <mark>켜서</mark> 활성화하거나, <mark>Connect</mark>를 클릭해 인증합니다(API Key 또는 OAuth 플러그인의 경우)</li>
+</ol>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/my_ai_settings.png"/>
+</p>
+<h3 id="from-the-chat-interface">채팅 인터페이스에서 활성화</h3>
+<p>Ask DataHub 채팅에서 플러그인을 직접 관리할 수도 있습니다.</p>
+<ol>
+<li>채팅 입력란 옆의 <mark>플러그인 아이콘</mark>을 클릭합니다</li>
+<li>드롭다운에 사용 가능한 모든 플러그인과 연결 상태가 표시됩니다</li>
+<li>플러그인을 켜거나 끄고, <mark>Manage AI plugins</mark>를 클릭해 인증을 구성합니다</li>
+</ol>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/chat_plugin_selector.png"/>
+</p>
+<p>인증이 필요한 플러그인의 경우 자격 증명을 입력하라는 메시지가 표시됩니다.</p>
+<p align="center">
+  <img width="50%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/connect_api_key_dialog.png"/>
+</p>
+<h2 id="using-plugins-in-conversations">대화에서 플러그인 사용하기</h2>
+<p>활성화하면 Ask DataHub 대화 중에 플러그인 도구를 매끄럽게 사용할 수 있습니다. 질문만 하면 AI 어시스턴트가 적절한 도구를 자동으로 사용합니다.</p>
+<p><mark>워크플로 예시:</mark></p>
+<ul>
+<li><em>&quot;이번 달 Snowflake에서 가장 많이 쿼리된 테이블은 무엇인가요?&quot;</em> — DataHub 검색 + Snowflake 쿼리</li>
+<li><em>&quot;revenue 모델의 최근 dbt 실행이 성공했나요?&quot;</em> — dbt Cloud 작업 기록</li>
+<li><em>&quot;ETL 파이프라인 코드의 최근 변경 사항을 보여 주세요&quot;</em> — GitHub 커밋 탐색</li>
+<li><em>&quot;데이터 보존 정책에 관한 내부 문서를 찾아 주세요&quot;</em> — Glean 지식 검색</li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

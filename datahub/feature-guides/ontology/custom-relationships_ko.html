@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>커스텀 관계 추가하기</title>
+<meta name="description" content="relationship Structured Properties로 governed by, derived from, broader than 같은 자체 관계 유형을 방향, 전이성, 표준 어휘 매핑과 함께 정의합니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">커스텀 관계 추가하기</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/custom-relationships.md">custom-relationships.md</a></span><span>원본 커밋: 4e3afa4</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="adding-custom-relationships">커스텀 관계 추가하기</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용 · 비공개 베타</p></blockquote>
+<p>내장 어휘인 <em>Inherits</em>, <em>Contains</em>, <em>Synonym</em>, <em>Antonym</em>, <em>Translates to</em>, <em>Valid value</em>, <em>Related to</em>는 범용 용어집 모델링을 다루지만 조직 고유의 어휘는 다루지 않습니다. <em>governed by</em>, <em>derived from</em>, <em>certified by</em>, <em>supersedes</em> 같은 관계에는 자체 관계 유형을 정의할 수 있습니다.</p>
+<p>이때 <mark>relationship Structured Property</mark>를 사용합니다.</p>
+<p>DataHub Cloud <mark>v2.2.1</mark> 이상에서 사용할 수 있습니다.</p>
+<h2 id="how-it-works">동작 방식</h2>
+<p>값 유형이 DataHub 엔터티인 <a href="../properties/overview_ko.html">Structured Property</a>는 이미 한 자산에서 다른 자산을 가리킵니다. 해당 속성의 <mark>relationship</mark> 스위치를 켜면 DataHub는 각 할당을 메타데이터 그래프의 실제 엣지로도 구체화합니다. 그러면 속성이 일급 관계처럼 동작해, 온톨로지 그래프에 그려지고, traverse API로 따라갈 수 있으며, SPARQL로 도달할 수 있습니다.</p>
+<p>두 엔터티가 관련되며, 각각의 역할을 알아 두면 좋습니다.</p>
+<ul>
+<li><mark>구조화된 속성</mark>은 겉면입니다. 사용자가 할당하고 속성 UI에 표시되는 대상입니다.</li>
+<li><mark>관계 유형</mark>(<code>urn:li:relationshipType:*</code>)은 술어의 정체성을 담습니다. 표시 이름, 방향 의미, 전이성, 역방향 레이블, RDF 술어 매핑이 여기에 해당합니다. 그래프 엣지의 키는 속성이 아니라 <em>이 관계 유형</em>입니다.</li>
+</ul>
+<p>보통 관계 유형을 직접 만들 필요는 없습니다. UI와 GraphQL 생성/업데이트 경로가 관계 유형을 만들고 포인터를 연결해 줍니다.</p>
+<h2 id="creating-a-relationship-property-in-the-ui">UI에서 관계 속성 만들기</h2>
+<ol>
+<li><mark>Govern → Structured Properties</mark>로 이동해 새 속성을 만듭니다.</li>
+<li><mark>value type</mark>을 DataHub 엔터티 유형으로 설정하고, 허용 유형을 관계가 가리킬 대상으로 제한합니다. 용어 간 관계라면 양쪽 모두 Glossary Term입니다.</li>
+<li><mark>Display Preferences</mark>를 열고 <mark>Treat as Relationship</mark>을 켭니다.</li>
+<li>관계의 의미를 구성합니다(아래 참고).</li>
+<li>저장합니다.</li>
+</ol>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/datahub/master/docs-website/static/imgs/ontology/ontology-relationship-property.png" alt="The Treat as Relationship toggle and its semantics settings"/>
+</p>
+<p><mark>Treat as Relationship</mark> 스위치는 엔터티 값 속성에서만 사용할 수 있습니다. 그렇지 않으면 가리킬 대상이 없기 때문입니다. 속성의 값 유형을 엔터티 유형이 아닌 것으로 전환하면 관계 설정이 지워집니다.</p>
+<h3 id="relationship-semantics">관계 의미</h3>
+<p>스위치를 켜면 네 가지 설정이 관계의 <em>의미</em>를 정의합니다.</p>
+<table>
+<thead>
+<tr>
+<th>설정</th>
+<th>동작</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Direction</mark></td>
+<td><mark>Directed</mark>(기본값)는 소스 → 대상으로 진행합니다. <mark>Undirected</mark>는 대칭이며, 요청한 방향과 관계없이 양방향으로 따라갑니다.</td>
+</tr>
+<tr>
+<td><mark>Reverse Label</mark></td>
+<td>방향성 관계를 역방향으로 읽을 때의 레이블입니다(정방향 &quot;Governed By&quot;에 대한 &quot;Governs&quot;). 표시 전용이며 두 번째 엣지를 만들지 않습니다.</td>
+</tr>
+<tr>
+<td><mark>Transitive</mark></td>
+<td>이 관계의 연쇄가 의미 있음을 선언합니다. A → B → C는 A → C를 의미합니다. 탐색 클라이언트에 제공되며 SPARQL의 RDFS 체제에서 사용됩니다.</td>
+</tr>
+<tr>
+<td><mark>Equivalent Properties</mark></td>
+<td>이 관계에 해당하는 표준 어휘 술어를 CURIE 또는 IRI(<code>skos:broader</code>, <code>skos:exactMatch</code>)로 지정합니다. 표준 기반 쿼리가 엣지에 도달할 수 있게 합니다.</td>
+</tr>
+</tbody>
+</table>
+<p>신중하게 설정하세요. 방향과 전이성은 관계를 따라가는 방식에 영향을 주므로 그래프를 탐색하는 모든 대상이 받는 결과가 달라집니다.</p>
+<h2 id="creating-a-relationship-property-via-the-api">API로 관계 속성 만들기</h2>
+<pre><code class="language-graphql">mutation {
+  createStructuredProperty(
+    input: {
+      id: &quot;governedBy&quot;
+      qualifiedName: &quot;governedBy&quot;
+      displayName: &quot;Governed By&quot;
+      description: &quot;The regulation or policy term that governs this concept.&quot;
+      valueType: &quot;urn:li:dataType:datahub.urn&quot;
+      cardinality: MULTIPLE
+      entityTypes: [&quot;urn:li:entityType:datahub.glossaryTerm&quot;]
+      typeQualifier: {
+        allowedTypes: [&quot;urn:li:entityType:datahub.glossaryTerm&quot;]
+      }
+      settings: {
+        isRelationship: true
+        relationshipSemantics: {
+          directionMode: DIRECTED
+          reverseDisplayName: &quot;Governs&quot;
+          transitive: false
+          equivalentProperties: [&quot;skos:broader&quot;]
+        }
+      }
+    }
+  ) {
+    urn
+  }
+}
+</code></pre>
+<p>이렇게 하면 구조화된 속성과 이 속성이 가리키는 관계 유형(속성의 id를 공유하는 <code>urn:li:relationshipType:governedBy</code>)이 모두 만들어집니다.</p>
+<h2 id="assigning-the-relationship">관계 할당하기</h2>
+<p>정의한 뒤에는 다른 구조화된 속성처럼 할당합니다. 값은 반대쪽 끝에 있는 엔터티의 URN입니다.</p>
+<pre><code class="language-graphql">mutation {
+  upsertStructuredProperties(
+    input: {
+      assetUrn: &quot;urn:li:glossaryTerm:customer&quot;
+      structuredPropertyInputParams: [
+        {
+          structuredPropertyUrn: &quot;urn:li:structuredProperty:governedBy&quot;
+          values: [{ stringValue: &quot;urn:li:glossaryTerm:gdpr&quot; }]
+        }
+      ]
+    }
+  ) {
+    properties {
+      structuredProperty {
+        urn
+      }
+    }
+  }
+}
+</code></pre>
+<p>용어집 용어에서 커스텀 관계는 <mark>Related Terms</mark> 탭에 내장 관계와 함께 표시되며, 여기에서 추가하고 제거할 수 있습니다.</p>
+<p>엣지는 비동기로 구체화되므로, 새로 할당한 관계가 그래프와 traverse API에 나타나기까지 잠시 시간이 걸립니다.</p>
+<h2 id="querying-custom-relationships">커스텀 관계 쿼리하기</h2>
+<p>커스텀 관계 유형은 내장 유형과 똑같이 탐색합니다. 내장 이름을 전달하는 위치에 관계 유형 URN을 전달하세요.</p>
+<pre><code class="language-bash">curl -H &quot;Authorization: Bearer $DATAHUB_TOKEN&quot; \
+  &quot;$DATAHUB_GMS_URL/openapi/v3/relationship/traverse\
+?urn=urn:li:glossaryTerm:customer\
+&amp;relationshipTypes=urn:li:relationshipType:governedBy\
+&amp;direction=OUTGOING&quot;
+</code></pre>
+<p>구조화된 속성 URN(<code>urn:li:structuredProperty:governedBy</code>)도 허용되며 같은 관계 유형으로 해석됩니다. <a href="querying-your-ontology_ko.html">온톨로지 쿼리하기</a>를 참고하세요.</p>
+<h2 id="modelling-guidance">모델링 지침</h2>
+<ul>
+<li><mark>의미당 하나의 관계.</mark> 실제 의미를 설명하는 주석을 달아 <em>Related to</em>를 재사용하지 마세요. 별도의 유형이 있어야 엣지를 쿼리하고 추론할 수 있습니다.</li>
+<li><mark>양방향 이름 지정.</mark> 역방향 표시 이름은 비용이 들지 않으며, 그래프의 모든 역방향 뷰를 읽기 쉽게 만듭니다.</li>
+<li><mark>실제로 전이적일 때만 표시.</mark> 전이성은 추론을 허용하므로, 잘못 선언하면 폐포 계산에서 확신에 찬 잘못된 답변이 나옵니다.</li>
+<li><mark>맞는 표준이 있으면 매핑.</mark> <code>skos:broader</code>나 <code>rdfs:subClassOf</code>를 동등 속성으로 선언하면 외부 도구와 표준 기반 쿼리가 DataHub의 이름을 몰라도 관계에 도달할 수 있습니다.</li>
+<li><mark>속성을 삭제하면 엣지도 제거됩니다.</mark> relationship 구조화된 속성을 제거하면 이 속성이 구체화한 그래프 엣지도 정리됩니다.</li>
+</ul>
+<h2 id="enabling-this-feature">이 기능 활성화하기</h2>
+<p>인스턴스에서 활성화하려면 DataHub 담당자에게 문의하세요.</p>
+<p>플래그가 없으면 DataHub는 새 관계 속성을 정의하려는 시도를 거부합니다. 엣지가 조용히 구체화되지 않는 관계를 선언하지 못하게 하기 위해서입니다.</p>
+<p>자체 관리 배포에서는 플래그를 설정하고 재시작합니다.</p>
+<pre><code class="language-bash">STRUCTURED_PROPERTY_GRAPH_EDGES_ENABLED=true
+</code></pre>
+<p>플래그는 GMS와, 독립 실행형 컨슈머를 실행한다면 MAE 및 MCE 컨슈머에서 일치해야 합니다. MAE 컨슈머는 엣지를 구체화하고 MCE 컨슈머는 관계 속성 정의를 제어합니다.
+Helm에서는 하나의 전역 값이 셋 모두에 적용됩니다.</p>
+<pre><code class="language-yaml">global:
+  datahub:
+    structuredPropertyGraphEdgesEnabled: true
+</code></pre>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

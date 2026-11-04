@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>온톨로지란?</title>
+<meta name="description" content="비즈니스 온톨로지는 용어 간에 타입이 지정되고 기계가 읽을 수 있는 관계를 추가해 Business Glossary를 확장하고, 단순한 정의 목록을 비즈니스의 연결된 모델로 바꿉니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">온톨로지란?</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ontology/overview.md">overview.md</a></span><span>원본 커밋: 4e3afa4</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="what-is-an-ontology">온톨로지란?</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용 · 비공개 베타</p></blockquote>
+<p><mark>Business Glossary</mark>는 <em>&quot;이 단어는 무슨 뜻인가?&quot;</em>에 답합니다. <mark>비즈니스 온톨로지</mark>는 그다음 질문인
+<em>&quot;이 단어들은 서로 어떤 관계인가?&quot;</em>에 답합니다.</p>
+<p>온톨로지는 Business Glossary에 용어 간의 <mark>타입이 지정된 방향성 관계</mark> 계층을 더한 것입니다. 단순한 정의 목록 대신
+사람과 기계가 모두 읽을 수 있는 연결된 모델을 얻습니다. <em>Individual Customer</em> <mark>is a</mark> <em>Customer</em>, <em>Customer</em> <mark>has a</mark> <em>Customer ID</em>,
+<em>Client</em>는 <em>Customer</em>의 <mark>synonym of</mark>, <em>Customer</em>는 <em>GDPR</em>의 <mark>governed by</mark> 관계가 그 예입니다.</p>
+<h2 id="why-relationships-matter">관계가 중요한 이유</h2>
+<p>정의 자체는 읽는 사람에게만 유용합니다. 관계는 DataHub의 나머지 부분이 활용할 수 있는 정보입니다.</p>
+<ul>
+<li><mark>탐색.</mark> <em>Customer</em>를 검색하는 사람은 <em>Individual Customer</em>와 <em>Business Customer</em>로 태그된 자산도 찾을 수 있어야 합니다. 온톨로지에서 이들을 Customer의 한 종류로 정의하기 때문입니다.</li>
+<li><mark>거버넌스.</mark> <em>Customer</em>에 GDPR이 적용되면 <em>Customer</em> 아래의 모든 개념이 그 의무를 상속합니다. 관계가 있으면 모든 용어에 정책을 다시 명시하지 않고 전파할 수 있습니다.</li>
+<li><mark>영향 분석.</mark> 용어를 폐기하거나 재정의하는 작업은 해당 용어를 상속하거나, 포함하거나, 번역하는 용어처럼 그에 의존하는 모든 것을 볼 수 있어야 안전합니다.</li>
+<li><mark>AI와 에이전트.</mark> <em>&quot;어떤 테이블에 매출 데이터가 있나요?&quot;</em>에 답하는 LLM은 단어 &quot;revenue&quot;를 문자열로 매칭하는 것보다 <em>Revenue → Turnover (synonym) → MRR/ARR (kinds of)</em>를 따라갈 수 있을 때 훨씬 잘 답합니다.</li>
+</ul>
+<h2 id="how-datahub-models-an-ontology">DataHub의 온톨로지 모델링 방식</h2>
+<p>DataHub는 별도의 &quot;온톨로지&quot; 엔터티를 도입하지 않습니다. 온톨로지는 관계를 통해 바라본 용어집 <mark>그 자체</mark>입니다.</p>
+<table>
+<thead>
+<tr>
+<th>구성 요소</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Glossary Term</mark></td>
+<td>개념으로, 온톨로지의 노드입니다.</td>
+</tr>
+<tr>
+<td><mark>Glossary Term Group</mark></td>
+<td>용어를 구성하는 폴더입니다. 사람을 위한 계층이며 의미적 관계는 아닙니다.</td>
+</tr>
+<tr>
+<td><mark>Built-in relationships</mark></td>
+<td>DataHub가 제공하는 관계 어휘로, 상속, 포함, 동의어, 반의어, 번역, 유효 값이 있습니다.</td>
+</tr>
+<tr>
+<td><mark>Custom relationships</mark></td>
+<td>내장 관계로 다룰 수 없는 비즈니스 어휘를 위해 직접 정의하는 관계 유형입니다. 예: <em>governed by</em>, <em>derived from</em>, <em>supersedes</em>.</td>
+</tr>
+</tbody>
+</table>
+<p>내장 관계와 커스텀 관계는 생성된 뒤 동일하게 동작합니다. 모든 관계는 리니지, 소유권, 도메인을 담는 것과 같은 DataHub 메타데이터 그래프의
+엣지가 됩니다. 따라서 온톨로지는 나머지 메타데이터와 같은 뷰에 그려지고 같은 API로 쿼리됩니다.</p>
+<p>어떤 관계가 있고 각각을 언제 사용하는지는
+<a href="relating-glossary-terms_ko.html">용어집 용어 연결하기</a>와
+<a href="custom-relationships_ko.html">커스텀 관계 추가하기</a>에서 다룹니다.</p>
+<h2 id="where-to-go-next">다음 단계</h2>
+<ol>
+<li><mark><a href="relating-glossary-terms_ko.html">용어집 용어 연결하기</a></mark> — 이미 있는 용어를 연결해 온톨로지를 구축합니다.</li>
+<li><mark><a href="visualizing-your-ontology_ko.html">온톨로지 시각화하기</a></mark> — 결과 그래프를 UI에서 전역적으로 또는 단일 용어에서 탐색합니다.</li>
+<li><mark><a href="querying-your-ontology_ko.html">온톨로지 쿼리하기</a></mark> — API로 관계 그래프를 따라가거나 AI 에이전트가 대신 따라가게 합니다.</li>
+<li><mark><a href="custom-relationships_ko.html">커스텀 관계 추가하기</a></mark> — 자체 관계 유형으로 어휘를 확장합니다.</li>
+<li><mark><a href="sparql-api_ko.html">SPARQL을 사용한 고급 쿼리</a></mark> — 표준 SPARQL로 그래프를 쿼리합니다.</li>
+</ol>
+<h2 id="importing-an-existing-ontology">기존 온톨로지 가져오기</h2>
+<p>조직에서 이미 RDF, OWL, SKOS로 온톨로지를 관리하고 있다면 직접 다시 만들 필요가 없습니다. DataHub의 <mark>RDF 수집 소스</mark>는 SKOS 개념을 용어집 용어로 가져오고, IRI 경로 계층에서 용어 그룹을 도출하며, <code>skos:broader</code> / <code>skos:narrower</code> 같은 표준 술어를 DataHub 관계에 매핑합니다.</p>
+<pre><code class="language-yaml">source:
+  type: rdf
+  config:
+    source: path/to/glossary.ttl
+    environment: PROD
+
+sink:
+  type: datahub-rest
+  config:
+    server: &quot;http://localhost:8080&quot;
+    token: &quot;${DATAHUB_TOKEN}&quot;
+</code></pre>
+<h2 id="related-reading">관련 자료</h2>
+<ul>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/glossary/business-glossary.md">Business Glossary</a> — 용어 자체를 만들고 구성합니다.</li>
+<li><a href="../properties/overview_ko.html">Structured Properties</a> — 커스텀 관계 유형의 기반이 되는 메커니즘입니다.</li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

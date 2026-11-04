@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BigQuery 플러그인</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">BigQuery 플러그인</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/bigquery.md">bigquery.md</a></span><span>원본 커밋: 884d673</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="bigquery-plugin">BigQuery 플러그인</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용</p></blockquote>
+<blockquote>
+<p><mark>참고</mark>: Ask DataHub Plugins는 현재 <mark>비공개 베타(Private Beta)</mark>입니다. 이 기능을 활성화하려면 DataHub 고객 지원 담당자에게 문의하세요.</p>
+</blockquote>
+<p><mark>BigQuery Plugin</mark>은 <a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp">BigQuery MCP 서버</a>를 통해 Ask DataHub를 <a href="https://cloud.google.com/bigquery">Google BigQuery</a>에 연결해 채팅에서 바로 대화형 분석을 할 수 있게 합니다. Snowflake 및 Databricks 플러그인과 마찬가지로 DataHub는 적합한 데이터를 찾는 <mark>시맨틱 계층</mark> 역할을 하고, BigQuery는 쿼리를 실행해 결과를 반환하는 <mark>데이터 계층</mark> 역할을 합니다.</p>
+<h2 id="why-connect-bigquery">BigQuery를 연결하는 이유</h2>
+<p>BigQuery 플러그인을 활성화하면 Ask DataHub로 다음을 할 수 있습니다.</p>
+<ul>
+<li><mark>대화형 분석</mark> — 일상적인 언어로 질문하고 실제 데이터에 근거한 답변을 받습니다. DataHub가 메타데이터(설명, 소유권, 리니지)로 적합한 테이블을 찾으면 BigQuery가 쿼리를 실행합니다.</li>
+<li><mark>데이터 탐색</mark> — 데이터셋 구조를 이해하고, 샘플 데이터를 미리 보고, 컬럼 값을 살펴 데이터 품질이나 사용 사례 적합성을 평가합니다.</li>
+<li><mark>데이터 디버깅</mark> — DataHub assertion이 감지한 데이터 문제를 실제 데이터로 조사합니다. 소스에서 null, 중복, 예상치 못한 값, 최신성 문제를 확인합니다.</li>
+</ul>
+<p>플러그인이 <mark>Google OAuth</mark>를 사용하므로 각 사용자는 자신의 Google 계정으로 인증합니다. 사용자는 IAM으로 접근 권한을 부여받은 데이터만 볼 수 있으며, DataHub에서 별도 정책을 관리할 필요가 없습니다.</p>
+<p><mark>프롬프트 예시:</mark></p>
+<ul>
+<li><em>&quot;이번 분기 매출 기준 상위 10개 고객을 쿼리해 주세요&quot;</em></li>
+<li><em>&quot;customers 테이블의 email 컬럼에 null 값이 몇 개 있나요?&quot;</em></li>
+<li><em>&quot;orders 테이블의 샘플 행 5개를 보여 주세요&quot;</em></li>
+<li><em>&quot;내 프로젝트의 모든 데이터셋을 나열해 주세요&quot;</em></li>
+</ul>
+<h2 id="prerequisites">사전 요구 사항</h2>
+<ul>
+<li>BigQuery API가 활성화된 Google Cloud 프로젝트</li>
+<li>프로젝트에서 <a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp">BigQuery MCP 서버 활성화</a>(아래 1단계 참고)</li>
+<li>사용자에게 프로젝트의 <a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp#required_roles">필수 IAM 역할</a>이 있어야 합니다(<code>roles/bigquery.dataViewer</code>, <code>roles/bigquery.jobUser</code>, <code>roles/mcp.toolUser</code> 포함)</li>
+<li>Ask DataHub Plugins가 활성화된 DataHub Cloud</li>
+<li>플러그인을 구성할 수 있는 DataHub 플랫폼 관리자 권한</li>
+</ul>
+<h2 id="admin-setup">관리자 설정</h2>
+<p>BigQuery 플러그인은 <mark>User OAuth</mark> 인증을 사용하며, 각 사용자가 자신의 Google 계정으로 인증합니다. 설정 과정은 BigQuery MCP 서버를 활성화하고, Google Cloud에서 OAuth 클라이언트를 만든 다음, DataHub에서 플러그인을 구성하는 순서입니다.</p>
+<h3 id="step-1-enable-the-bigquery-mcp-server">1단계: BigQuery MCP 서버 활성화</h3>
+<p><a href="https://docs.cloud.google.com/sdk/docs/install"><code>gcloud</code> CLI</a>를 사용해 Google Cloud 프로젝트에서 BigQuery MCP 서버를 활성화합니다.</p>
+<pre><code class="language-bash">gcloud beta services mcp enable bigquery.googleapis.com \
+    --project=YOUR_PROJECT_ID
+</code></pre>
+<blockquote>
+<p><strong>팁: gcloud 버전</strong></p>
+<p>이 명령에는 최신 버전의 gcloud CLI beta 컴포넌트가 필요합니다. <code>Invalid choice: 'mcp'</code>가 표시되면 <code>gcloud components update</code>를 실행해 최신 버전으로 업데이트하세요.</p>
+</blockquote>
+<p>자세한 내용은 <a href="https://docs.cloud.google.com/mcp/enable-disable-mcp-servers">Google Cloud 문서</a>를 참고하세요.</p>
+<h3 id="step-2-create-an-oauth-client-and-collect-credentials">2단계: OAuth 클라이언트 만들기 및 자격 증명 수집</h3>
+<p><a href="https://console.cloud.google.com/auth/clients">Google Auth Platform &gt; Clients</a>에서 <mark>Web application</mark> OAuth 클라이언트를 만듭니다. 클라이언트를 구성할 때 DataHub OAuth 콜백 URL을 <mark>Authorized redirect URI</mark>로 추가합니다.</p>
+<pre><code>https://&lt;your-datahub-url&gt;/integrations/oauth/callback
+</code></pre>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/bigquery_oauth_settings.png"/>
+</p>
+<blockquote>
+<p><strong>주의: 리디렉션 URI</strong></p>
+<p><mark>Authorized redirect URI</mark>는 DataHub 플러그인 생성 양식에 표시된 OAuth Callback URL과 정확히 일치해야 합니다(예: <code>https://your-org.acryl.io/integrations/oauth/callback</code>). 3단계에서 플러그인을 만들 때 DataHub 양식에서 이 URL을 복사할 수 있습니다.</p>
+</blockquote>
+<p>클라이언트를 만든 뒤 <mark>Client ID</mark>와 <mark>Client Secret</mark>을 바로 복사하세요. client secret은 다시 표시되지 않습니다.</p>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/bigquery_oauth_creds.png"/>
+</p>
+<p>자세한 지침은 Google 문서의 <a href="https://developers.google.com/identity/protocols/oauth2#1.-obtain-oauth-2.0-credentials-from-the-dynamic_data.setvar.console_name.">OAuth 2.0 자격 증명 얻기</a>를 참고하세요.</p>
+<h3 id="step-3-create-plugin-in-datahub">3단계: DataHub에서 플러그인 만들기</h3>
+<ol>
+<li>DataHub에서 <mark>Settings &gt; AI &gt; Plugins</mark>로 이동합니다</li>
+<li><mark>+ Create</mark>를 클릭하고 <mark>Custom MCP</mark>를 선택합니다</li>
+<li>플러그인 세부 정보를 입력합니다</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>필드</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Name</mark></td>
+<td><code>BigQuery</code></td>
+</tr>
+<tr>
+<td><mark>Description</mark></td>
+<td>플러그인 설명</td>
+</tr>
+<tr>
+<td><mark>MCP Server URL</mark></td>
+<td><code>https://bigquery.googleapis.com/mcp</code></td>
+</tr>
+<tr>
+<td><mark>Authentication Type</mark></td>
+<td><code>User OAuth (Each user authenticates)</code></td>
+</tr>
+</tbody>
+</table>
+<ol start="4">
+<li>DataHub가 Google에서 OAuth 구성을 자동으로 찾습니다. 다음을 입력합니다</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>필드</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Client ID</mark></td>
+<td>2단계에서 얻은 값</td>
+</tr>
+<tr>
+<td><mark>Client Secret</mark></td>
+<td>2단계에서 얻은 값</td>
+</tr>
+<tr>
+<td><mark>Default Scopes</mark></td>
+<td><code>https://www.googleapis.com/auth/bigquery</code></td>
+</tr>
+</tbody>
+</table>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/bigquery_plugin_config.png"/>
+</p>
+<blockquote>
+<p><strong>정보: OAuth 스코프</strong></p>
+<p><code>https://www.googleapis.com/auth/bigquery</code> 스코프는 BigQuery에 대한 읽기 및 쓰기 권한을 부여합니다. 사용 가능한 전체 스코프 목록은 <a href="https://developers.google.com/identity/protocols/oauth2/scopes#bigquery">BigQuery OAuth scopes</a>를 참고하세요.</p>
+</blockquote>
+<ol start="5">
+<li>필요하면 <mark>Instructions for the AI Assistant</mark>를 추가하고, <mark>Enable for Ask DataHub</mark>가 켜져 있는지 확인한 뒤 <mark>Create</mark>를 클릭합니다</li>
+</ol>
+<h2 id="user-setup">사용자 설정</h2>
+<p><mark>Settings &gt; My AI Settings</mark>로 이동해 <mark>BigQuery</mark> 플러그인을 찾고 <mark>Connect</mark>를 클릭합니다. Google로 리디렉션되어 인증한 뒤 DataHub로 돌아옵니다. 자세한 내용은 <a href="overview_ko.html#user-setup-enabling-plugins">개요</a>를 참고하세요.</p>
+<blockquote>
+<p><strong>참고: OAuth 동의 화면</strong></p>
+<p>OAuth 동의 화면이 <mark>Internal</mark>로 설정되어 있으면 Google Workspace 조직 내 사용자만 인증할 수 있습니다. <mark>External</mark>로 설정되어 있고 아직 인증받지 않았다면 사용자에게 경고가 표시될 수 있으며, <mark>Advanced &gt; Go to &lt;app name&gt;</mark>을 클릭해 계속할 수 있습니다. 프로덕션 환경에서는 <a href="https://support.google.com/cloud/answer/10311615">동의 화면 인증</a>을 고려하세요.</p>
+</blockquote>
+<h2 id="capabilities">기능</h2>
+<p>연결하면 Ask DataHub는 BigQuery MCP 서버로 다음을 수행할 수 있습니다.</p>
+<ul>
+<li><mark>SQL 쿼리 실행</mark> — BigQuery 데이터에 SELECT 쿼리를 실행합니다(읽기 전용이며 쓰기 작업은 지원하지 않습니다)</li>
+<li><mark>데이터셋과 테이블 탐색</mark> — 프로젝트의 데이터셋과 데이터셋의 테이블을 나열합니다</li>
+<li><mark>테이블 메타데이터 확인</mark> — 스키마, 행 수, 기타 테이블 세부 정보를 확인합니다</li>
+</ul>
+<p>사용 가능한 전체 도구 목록은 <a href="https://docs.cloud.google.com/bigquery/docs/reference/mcp">BigQuery MCP 참조 문서</a>를 참고하세요.</p>
+<h2 id="troubleshooting">문제 해결</h2>
+<h3 id="oauth-fails">OAuth 실패</h3>
+<ul>
+<li>Google Cloud의 <mark>Authorized redirect URI</mark>가 DataHub에 표시된 OAuth Callback URL과 정확히 일치하는지 확인합니다</li>
+<li>Client ID와 Client Secret을 올바르게 입력했는지 확인합니다</li>
+<li>Google Cloud 프로젝트에 <a href="https://console.cloud.google.com/auth/audience">OAuth 동의 화면</a>이 구성되어 있는지 확인합니다</li>
+</ul>
+<h3 id="permission-errors">권한 오류</h3>
+<ul>
+<li>사용자에게 프로젝트의 <a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp#required_roles">필수 IAM 역할</a>이 있는지 확인합니다</li>
+<li>프로젝트에서 BigQuery MCP 서버가 활성화되어 있는지 확인합니다</li>
+</ul>
+<h3 id="query-failures">쿼리 실패</h3>
+<ul>
+<li>사용자가 쿼리하는 데이터셋과 테이블에 접근 권한이 있는지 확인합니다</li>
+<li><code>execute_sql</code> 쿼리는 기본적으로 <a href="https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp#limitations">3분으로 제한</a>되며, 더 오래 걸리는 쿼리는 자동으로 취소됩니다</li>
+<li>BigQuery MCP는 Google Drive 외부 테이블 쿼리를 지원하지 않습니다</li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

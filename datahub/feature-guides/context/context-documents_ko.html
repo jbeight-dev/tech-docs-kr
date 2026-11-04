@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Documents</title>
+<meta name="description" content="런북, FAQ, 의사 결정 기록, 프로세스 가이드 같은 조직의 암묵지를 Context Documents로 DataHub에 담습니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">Context Documents</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/context/context-documents.md">context-documents.md</a></span><span>원본 커밋: 66df165</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="context-documents">Context Documents</h1>
+<blockquote><p>기능 제공 범위: DataHub Core, DataHub Cloud</p></blockquote>
+<p><mark>Context Documents</mark>는 사람과 AI 에이전트에게 필요하지만 테이블 스키마만으로는 얻을 수 없는 지식을 담습니다. 메트릭의 의미, 신뢰할 수 있는 테이블, 접근 요청 방법, 주의할 사항 등이 여기에 해당합니다.</p>
+<p>에이전트는 일상적인 언어로 질문해 이러한 문서를 찾습니다. 좋은 컨텍스트 문서는 특정 질문에 답하기 위한 지도처럼 읽힙니다. &quot;순매출 유지율을 계산하려면 이 테이블에서 시작해 이렇게 조인하고, 체험 계정을 제외하세요.&quot; 거버넌스와 프로세스에도 똑같이 잘 맞습니다. &quot;고객 PII에 접근하는 방법과 승인자는 다음과 같습니다.&quot;</p>
+<p>데이터 에이전트를 위한 스킬이라고 생각하면 됩니다. 에이전트가 질문에 필요할 때만 가져오는 작은 노하우 조각입니다.</p>
+<p>Context Documents의 출처는 두 가지입니다.</p>
+<ul>
+<li><mark>사람</mark>이 DataHub에서 작성하거나 Notion, Confluence, GitHub에서 가져옵니다.</li>
+<li><mark><a href="context-generation_ko.html">Context Generation</a></mark>(DataHub Cloud)이 분석가가 실행한 쿼리, BI, 시맨틱 모델 같은 분석 활동의 산출물로 작성합니다. 각 문서는 팀이 반복해서 답하는 비즈니스 질문에 대한 지도입니다.</li>
+</ul>
+<p>문서를 <mark>게시</mark>하면 팀, <a href="../ask-datahub_ko.html">Ask DataHub</a>, <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/mcp.md">MCP 서버</a>로 연결된 모든 에이전트가 볼 수 있습니다. 문서를 <a href="https://github.com/datahub-project/datahub/blob/master/docs/domains.md">도메인</a>에 할당하면 해당 도메인의 에이전트로 제한할 수 있습니다.</p>
+<p align="center">
+  <img width="90%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/context-document-profile-1.png"/>
+</p>
+<h2 id="highlights">주요 기능</h2>
+<p>Context Documents는 DataHub의 일급 구성 요소입니다. 다음을 할 수 있습니다.</p>
+<ul>
+<li><mark>유형별 분류</mark> — Runbook, FAQ, Policy, Decision Log 등</li>
+<li><mark>메타데이터로 구성</mark> — Domains, Tags, Glossary Terms, Owners, Structured Properties</li>
+<li><mark>관련 자산 연결</mark> — 문서가 설명하는 테이블, 대시보드, 차트, 도메인, 데이터 제품, 용어집 용어에 연결합니다. 에이전트는 해당 자산을 조회할 때마다 관련 문서를 봅니다.</li>
+<li><mark>표시 범위 제어</mark> — 게시해 조직 및 AI 에이전트와 공유하거나 초안으로 유지합니다</li>
+<li><mark>버전 기록 추적</mark> — 시간에 따른 변경 사항을 보고 이전 버전을 복원합니다</li>
+<li><mark>외부 소스에서 가져오기</mark> — Notion, Confluence, GitHub의 문서를 가져옵니다</li>
+<li><mark>실제 사용에서 생성</mark> — DataHub Cloud의 <a href="context-generation_ko.html">Context Generation</a>이 쿼리 기록과 BI 정의로 문서를 작성합니다</li>
+</ul>
+<h2 id="creating-a-document">문서 만들기</h2>
+<p>왼쪽 탐색 메뉴의 <mark>Documents</mark> 섹션에서 문서를 만듭니다.</p>
+<ol>
+<li><mark>+ New</mark>를 클릭해 새 문서를 만듭니다.</li>
+<li>계층 구조에 넣을 <mark>상위 문서</mark>를 선택합니다(선택 사항).</li>
+<li>제목을 입력하고 서식 있는 텍스트 편집기로 내용을 작성합니다.</li>
+<li>필요에 따라 메타데이터(Type, Owner, Tags, Domain)를 추가합니다.</li>
+</ol>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/context-document-new.png"/>
+</p>
+<h2 id="guardrails-for-specific-tables">특정 테이블을 위한 가드레일</h2>
+<p>&quot;금액 단위는 센트입니다&quot;, &quot;항상 <code>is_test</code>를 필터링하세요&quot;, &quot;일별 스냅샷이므로 여러 날에 걸쳐 합산하면 안 됩니다&quot;처럼 하나의 테이블에 속하는 지식이 있습니다. 이러한 지식을 문서에 작성하고 문서를 테이블에 연결하세요.</p>
+<ul>
+<li>문서에서 <mark>Related Assets</mark>에 테이블을 추가합니다.</li>
+<li>또는 테이블 페이지에서 <mark>Add related link or context</mark>를 사용합니다.</li>
+</ul>
+<p>관련 문서는 자산과 함께 전달됩니다. 에이전트가 테이블을 조회하면 별도로 검색할 필요 없이 스키마와 함께 가드레일을 받습니다. 대시보드, 도메인, 데이터 제품, 용어집 용어에도 동일하게 적용됩니다.</p>
+<h2 id="importing-documents">문서 가져오기</h2>
+<p><mark>Documents</mark>에서 <mark>Import</mark>를 클릭하고, 소스를 선택하고, 연결을 구성합니다. DataHub는 한 번 또는 일정에 따라 실행할 수 있는 관리형 수집 소스를 만듭니다. 가져오기를 관리하려면 다른 Data Sources와 같은 권한이 필요합니다.</p>
+<p>기본적으로 모든 소스는 DataHub에 <mark>Native</mark>(편집 가능) 문서를 만듭니다. 소스 시스템에 연결된 읽기 전용 문서를 원하면 데이터 소스 구성에서 <mark>Document import mode</mark>를 <mark>External</mark>로 전환하세요.</p>
+<table>
+<thead>
+<tr>
+<th>소스</th>
+<th>방향</th>
+<th>참고</th>
+<th>가이드</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Notion</mark></td>
+<td>단방향(Notion → DataHub)</td>
+<td>기본은 Native이며 선택적으로 External(읽기 전용). 역동기화 없음.</td>
+<td><a href="import-notion_ko.html">Notion에서 가져오기</a></td>
+</tr>
+<tr>
+<td><mark>Confluence</mark></td>
+<td>단방향(Confluence → DataHub)</td>
+<td>기본은 Native이며 선택적으로 External(읽기 전용). 역동기화 없음.</td>
+<td><a href="import-confluence_ko.html">Confluence에서 가져오기</a></td>
+</tr>
+<tr>
+<td><mark>GitHub</mark></td>
+<td>가져오기, 역동기화는 DataHub Cloud만</td>
+<td>기본은 Native이며 선택적으로 External(읽기 전용). 역동기화는 <mark>DataHub Cloud만</mark> 지원.</td>
+<td><a href="import-github_ko.html">GitHub에서 가져오기</a></td>
+</tr>
+</tbody>
+</table>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/context-document-import.png"/>
+</p>
+<p><em>스크린샷: Import Documents 소스 선택 화면(Notion, Confluence, GitHub).</em></p>
+<p><mark>Upload files</mark>를 선택해 Markdown, Word, HTML, 텍스트, CSV 파일을 직접 가져올 수도 있습니다.</p>
+<p>실행과 일정은 <mark>Data Sources</mark> / <mark>Ingestion</mark> 페이지에서 추적합니다.</p>
+<h2 id="publishing-a-document">문서 게시하기</h2>
+<p>문서는 <mark>Draft</mark> 또는 <mark>Published</mark> 상태일 수 있습니다. Draft 문서는 소유자인 본인에게만 표시됩니다. Published 문서는 다른 모든 사람에게 표시됩니다.</p>
+<p>문서 헤더의 <mark>Published</mark>를 전환해 문서를 게시하거나 게시 취소합니다.</p>
+<p align="center">
+  <img width="50%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/context-document-publish.png"/>
+</p>
+<blockquote>
+<p><strong>정보: Context Documents는 기본적으로 <mark>Published</mark> 상태로 생성됩니다.</strong></p>
+</blockquote>
+<h2 id="moving-a-document">문서 이동하기</h2>
+<p>문서 계층 구조는 언제든 다시 구성할 수 있습니다.</p>
+<ol>
+<li>문서를 열거나 디렉터리 트리의 컨텍스트 메뉴를 사용합니다.</li>
+<li><mark>Move</mark>를 선택합니다.</li>
+<li>새 상위 문서를 선택합니다(또는 최상위로 이동합니다).</li>
+</ol>
+<h2 id="searching-for-documents">문서 검색하기</h2>
+<p>DataHub의 기본 검색창에서 데이터 자산과 함께 문서를 찾거나, 왼쪽 탐색 모음의 <mark>Documents</mark> 탭에서 찾을 수 있습니다.</p>
+<h2 id="document-history">문서 기록</h2>
+<p>문서 기록 타임라인에서 변경 사항을 추적하고, 이전 버전을 보고, 문서 내용을 복원할 수 있습니다.</p>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/context-document-history-log.png"/>
+</p>
+<p>변경 유형은 다음과 같습니다.</p>
+<ul>
+<li>문서 생성</li>
+<li>문서 제목 변경</li>
+<li>문서 내용 변경</li>
+<li>문서 게시 또는 게시 취소</li>
+<li>관련 자산 업데이트</li>
+</ul>
+<h2 id="context-documents-in-ask-datahub">Ask DataHub의 Context Documents</h2>
+<p><a href="../ask-datahub_ko.html">Ask DataHub</a>에 질문하면 AI가 메타데이터 그래프와 함께 게시된 문서를 검색합니다. 관련 컨텍스트를 찾으면 Ask DataHub는 응답에 해당 문서를 인용합니다. 문서는 질문과의 일치도, 사용 빈도, 최근 업데이트 시점에 따라 순위가 매겨지므로 자주 사용되고 최신 상태인 문서가 먼저 표시됩니다. 외부 에이전트가 <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/mcp.md">MCP 서버</a>로 검색할 때도 같은 순위가 적용됩니다.</p>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/context/context-document-chat.png"/>
+</p>
+<p><em>참고: Ask DataHub는 DataHub Cloud에서만 사용할 수 있습니다.</em></p>
+<h2 id="who-can-create-edit-and-delete-documents">문서를 만들고, 편집하고, 삭제할 수 있는 사람</h2>
+<table>
+<thead>
+<tr>
+<th>역할</th>
+<th>생성</th>
+<th>편집 및 이동</th>
+<th>삭제</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Admin</td>
+<td>예</td>
+<td>예</td>
+<td>예</td>
+</tr>
+<tr>
+<td>Editor</td>
+<td>예</td>
+<td>예</td>
+<td>자신이 소유한 문서만</td>
+</tr>
+<tr>
+<td>Reader</td>
+<td>아니요</td>
+<td>아니요</td>
+<td>아니요</td>
+</tr>
+</tbody>
+</table>
+<p>문서 소유자는 역할과 관계없이 문서를 편집, 이동, 삭제할 수 있습니다.</p>
+<p>이를 변경하려면 <a href="https://github.com/datahub-project/datahub/blob/master/docs/authorization/policies.md#documents">정책</a>을 편집하세요.</p>
+<h2 id="programmatic-access">프로그래밍 방식 접근</h2>
+<p>Context Documents에는 다음 방법으로 접근할 수 있습니다.</p>
+<ul>
+<li><mark>Python SDK</mark>: 프로그래밍 방식으로 문서를 만들고, 업데이트하고, 가져옵니다. <a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/documents.md">Documents API 튜토리얼</a>을 참고하세요.</li>
+<li><mark>MCP Server</mark>: AI 에이전트와 외부 도구에 문서를 노출합니다. <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/mcp.md">DataHub MCP 서버</a>를 참고하세요.</li>
+</ul>
+<h2 id="related-guides">관련 가이드</h2>
+<ul>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/managed-datahub/build-a-data-agent/overview.md">Build a Data Agent</a>: AI 에이전트에서 Context Documents를 사용하는 가이드</li>
+<li><a href="https://docs.datahub.com/docs/generated/ingestion/sources/notion">Notion 수집 소스</a></li>
+<li><a href="https://docs.datahub.com/docs/generated/ingestion/sources/confluence">Confluence 수집 소스</a></li>
+<li><a href="https://docs.datahub.com/docs/generated/ingestion/sources/github">GitHub Documents 수집 소스</a></li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

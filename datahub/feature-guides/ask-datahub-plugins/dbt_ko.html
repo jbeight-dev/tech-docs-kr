@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dbt Cloud 플러그인</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">dbt Cloud 플러그인</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/ask-datahub-plugins/dbt.md">dbt.md</a></span><span>원본 커밋: 884d673</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="dbt-cloud-plugin">dbt Cloud 플러그인</h1>
+<blockquote><p>기능 제공 범위: DataHub Cloud 전용</p></blockquote>
+<blockquote>
+<p><mark>참고</mark>: Ask DataHub Plugins는 현재 <mark>비공개 베타(Private Beta)</mark>입니다. 이 기능을 활성화하려면 DataHub 고객 지원 담당자에게 문의하세요.</p>
+</blockquote>
+<p><mark>dbt Cloud Plugin</mark>은 <a href="https://docs.getdbt.com/docs/dbt-ai/setup-remote-mcp">dbt 원격 MCP 서버</a>를 통해 Ask DataHub를 dbt Cloud 환경에 연결합니다. AI 어시스턴트는 작업 실행, 모델 정의, 테스트 결과를 볼 수 있고, 적절히 구성하면 사용자를 대신해 SQL 쿼리도 실행할 수 있습니다.</p>
+<h2 id="why-connect-dbt-cloud">dbt Cloud를 연결하는 이유</h2>
+<p>dbt Cloud 플러그인을 활성화하면 Ask DataHub로 다음을 할 수 있습니다.</p>
+<ul>
+<li><mark>작업 실행 상태 확인</mark> — 최근 dbt 실행의 성공 또는 실패 여부를 확인합니다</li>
+<li><mark>모델 정의 살펴보기</mark> — dbt 모델의 SQL과 구성을 확인합니다</li>
+<li><mark>테스트 결과 검토</mark> — 어떤 테스트가 통과하거나 실패했는지와 그 이유를 파악합니다</li>
+<li><mark>SQL 쿼리 실행</mark> — dbt를 통해 웨어하우스에 쿼리를 실행합니다(추가 구성 필요)</li>
+</ul>
+<p><mark>프롬프트 예시:</mark></p>
+<ul>
+<li><em>&quot;revenue 모델의 최근 dbt 실행이 성공했나요?&quot;</em></li>
+<li><em>&quot;orders 모델의 SQL 정의를 보여 주세요&quot;</em></li>
+<li><em>&quot;최근 24시간 동안 실패한 dbt 테스트는 무엇인가요?&quot;</em></li>
+<li><em>&quot;customers 테이블을 쿼리해 null 이메일이 있는지 확인해 주세요&quot;</em></li>
+</ul>
+<h2 id="prerequisites">사전 요구 사항</h2>
+<ul>
+<li><a href="https://docs.getdbt.com/docs/cloud/enable-dbt-copilot">AI 기능이 활성화</a>되어 있고 원격 MCP 서버가 동작 중인 dbt Cloud 계정</li>
+<li><mark>Semantic Layer</mark> 및 <mark>Developer</mark> 권한이 있는 dbt Cloud <a href="https://docs.getdbt.com/docs/dbt-cloud-apis/authentication">개인 액세스 토큰 또는 서비스 토큰</a></li>
+<li>dbt Cloud <mark>프로덕션 환경 ID</mark>(SQL 실행에는 선택적으로 <mark>개발 환경 ID</mark>)</li>
+<li>Ask DataHub Plugins가 활성화된 DataHub Cloud</li>
+<li>플러그인을 구성할 수 있는 DataHub 플랫폼 관리자 권한</li>
+</ul>
+<h2 id="admin-setup">관리자 설정</h2>
+<h3 id="step-1-enable-the-dbt-remote-mcp-server">1단계: dbt 원격 MCP 서버 활성화</h3>
+<p><a href="https://docs.getdbt.com/docs/dbt-ai/setup-remote-mcp">dbt 원격 MCP 설정 가이드</a>에 따라 dbt Cloud 프로젝트의 원격 MCP 서버를 활성화합니다.</p>
+<h3 id="step-2-collect-configuration-details">2단계: 구성 세부 정보 수집</h3>
+<p>dbt Cloud에서 다음 정보가 필요합니다.</p>
+<p><mark>MCP Server URL</mark>: dbt Cloud 호스트를 사용해 URL을 구성합니다.</p>
+<pre><code>https://&lt;YOUR_DBT_HOST_URL&gt;/api/ai/v1/mcp/
+</code></pre>
+<p>멀티 셀 계정의 호스트 URL 형식은 <code>ACCOUNT_PREFIX.us1.dbt.com</code>입니다. 자세한 내용은 <a href="https://docs.getdbt.com/docs/cloud/about-cloud/access-regions-ip-addresses">dbt 리전 문서</a>를 참고하세요.</p>
+<p><mark>Production Environment ID</mark>: dbt Cloud에서 <mark>Orchestration &gt; Environments</mark>로 이동해 URL에서 환경 ID를 복사합니다.</p>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/dbt_environment_id.png"/>
+</p>
+<p><mark>API Token</mark>: <a href="https://docs.getdbt.com/docs/dbt-cloud-apis/user-tokens">개인 액세스 토큰</a> 또는 <a href="https://docs.getdbt.com/docs/dbt-cloud-apis/service-tokens">서비스 토큰</a>을 생성합니다. 토큰에는 <mark>Semantic Layer</mark> 및 <mark>Developer</mark> 권한이 있어야 합니다.</p>
+<h3 id="step-3-create-plugin-in-datahub">3단계: DataHub에서 플러그인 만들기</h3>
+<ol>
+<li>DataHub에서 <mark>Settings &gt; AI &gt; Plugins</mark>로 이동합니다</li>
+<li><mark>+ Create</mark>를 클릭하고 <mark>dbt Cloud MCP</mark>를 선택합니다</li>
+<li>플러그인 세부 정보를 입력합니다</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>필드</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Name</mark></td>
+<td><code>dbt Cloud</code></td>
+</tr>
+<tr>
+<td><mark>Description</mark></td>
+<td>플러그인 설명</td>
+</tr>
+<tr>
+<td><mark>MCP Server URL</mark></td>
+<td><code>https://&lt;YOUR_DBT_HOST_URL&gt;/api/ai/v1/mcp/</code></td>
+</tr>
+<tr>
+<td><mark>Production Environment ID</mark></td>
+<td>2단계에서 얻은 프로덕션 환경 ID</td>
+</tr>
+</tbody>
+</table>
+<p align="center">
+  <img width="70%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/dbt_plugin_config.png"/>
+</p>
+<ol start="4">
+<li>인증 유형을 선택합니다</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>옵션</th>
+<th>동작 방식</th>
+<th>적합한 경우</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Shared API Key</mark></td>
+<td>관리자가 모든 사용자에게 사용되는 단일 서비스 토큰을 입력합니다</td>
+<td>하나의 서비스 계정으로 중앙 집중식 접근</td>
+</tr>
+<tr>
+<td><mark>User API Key</mark></td>
+<td>각 사용자가 연결할 때 자신의 개인 액세스 토큰을 입력합니다</td>
+<td>사용자별 감사 추적과 접근 제어</td>
+</tr>
+</tbody>
+</table>
+<h3 id="step-4-enable-sql-execution-optional">4단계: SQL 실행 활성화(선택 사항)</h3>
+<p>Ask DataHub가 dbt를 통해 SQL 쿼리를 실행하도록 하려면 다음 추가 필드를 입력합니다.</p>
+<table>
+<thead>
+<tr>
+<th>필드</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><mark>Development Environment ID</mark></td>
+<td>dbt Cloud 개발 환경 ID(Orchestration &gt; Environments 페이지에서 확인)</td>
+</tr>
+<tr>
+<td><mark>User ID</mark></td>
+<td>dbt Cloud 사용자 ID(dbt Cloud의 <mark>Settings &gt; Users</mark> URL에서 확인)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>주의</strong></p>
+<p><mark>Shared API Key</mark>를 사용하면 모든 사용자가 사용자 ID를 공유하므로 쿼리가 하나의 ID로 실행됩니다. <mark>User API Key</mark> 인증에서는 각 사용자가 연결할 때 자신의 사용자 ID를 입력합니다.</p>
+</blockquote>
+<p><mark>Settings &gt; Users</mark>로 이동해 프로필을 선택하면 URL에서 dbt Cloud 사용자 ID를 확인할 수 있습니다.</p>
+<p align="center">
+  <img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/dbt_user_id.png"/>
+</p>
+<p>SQL 실행이 동작하려면 각 사용자가 dbt Cloud에 <a href="https://docs.getdbt.com/docs/cloud/connect-data-platform/connect-your-database">개발 자격 증명</a>(프로필의 웨어하우스 연결)도 구성해야 합니다.</p>
+<ol start="5">
+<li>필요하면 <mark>Instructions for the AI Assistant</mark>를 추가하고, <mark>Enable for Ask DataHub</mark>가 켜져 있는지 확인한 뒤 <mark>Create</mark>를 클릭합니다</li>
+</ol>
+<h2 id="user-setup">사용자 설정</h2>
+<p><mark>Settings &gt; My AI Settings</mark>로 이동해 <mark>dbt Cloud</mark> 플러그인을 찾습니다. <mark>User API Key</mark> 인증을 사용한다면 <mark>Connect</mark>를 클릭하고 dbt Cloud API 토큰과 사용자 ID를 입력합니다. <mark>Shared API Key</mark> 인증을 사용한다면 플러그인을 <mark>켜기만</mark> 하면 됩니다. 자세한 내용은 <a href="overview_ko.html#user-setup-enabling-plugins">개요</a>를 참고하세요.</p>
+<p align="center">
+  <img width="50%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/saas/ai/plugins/dbt_user_config.png"/>
+</p>
+<h2 id="usage-tips">사용 팁</h2>
+<ul>
+<li>dbt Cloud를 DataHub 리니지와 결합해 종단 간 디버깅을 수행합니다. 대시보드 문제를 DataHub 리니지를 따라 실패한 dbt 모델까지 추적할 수 있습니다</li>
+<li>특정 환경(프로덕션 또는 스테이징)을 지정해 질문하면 원하는 결과를 얻을 수 있습니다</li>
+<li>dbt 테스트 결과와 DataHub assertion을 함께 사용해 데이터 품질을 완전하게 파악합니다</li>
+</ul>
+<blockquote>
+<p><strong>정보: dbt Copilot 크레딧</strong></p>
+<p><code>text_to_sql</code> 도구만 dbt Copilot 크레딧을 소비합니다. 다른 MCP 도구(메타데이터 탐색, 시맨틱 계층 쿼리)는 소비하지 않습니다. 자세한 내용은 <a href="https://docs.getdbt.com/docs/dbt-ai/setup-remote-mcp">dbt 문서</a>를 참고하세요.</p>
+</blockquote>
+<h2 id="troubleshooting">문제 해결</h2>
+<h3 id="connection-errors">연결 오류</h3>
+<ul>
+<li>dbt Cloud API 토큰이 유효하고 <mark>Semantic Layer</mark> 및 <mark>Developer</mark> 권한이 있는지 확인합니다</li>
+<li>dbt Cloud 프로젝트에서 원격 MCP 서버가 활성화되어 있는지 확인합니다</li>
+</ul>
+<h3 id="wrong-project-or-environment">잘못된 프로젝트 또는 환경</h3>
+<ul>
+<li><mark>Production Environment ID</mark>가 올바르게 설정되어 있는지 확인합니다</li>
+<li>환경 ID가 dbt Cloud URL에 표시된 값과 일치하는지 다시 확인합니다</li>
+</ul>
+<h3 id="sql-queries-not-working">SQL 쿼리가 동작하지 않음</h3>
+<ul>
+<li>해당 사용자의 <a href="https://docs.getdbt.com/docs/cloud/connect-data-platform/connect-your-database">개발 자격 증명</a>이 dbt Cloud에 구성되어 있는지 확인합니다</li>
+<li><mark>Development Environment ID</mark>와 <mark>User ID</mark>가 설정되어 있는지 확인합니다</li>
+<li>API 토큰에 쿼리 실행 권한이 있는지 확인합니다</li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

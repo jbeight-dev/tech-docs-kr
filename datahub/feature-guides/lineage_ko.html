@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataHub 리니지 소개</title>
+<meta name="description" content="DataHub 데이터 리니지로 소스 시스템에서 변환을 거쳐 소비에 이르기까지 조직 내 데이터 흐름을 파악합니다.">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img { page-break-inside: avoid; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+  /* 모바일 가로 넘침 방지: 긴 코드·URL 줄바꿈, 임베드 폭 제한 */
+  article { overflow-wrap: break-word; }
+  iframe { max-width: 100%; }
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="document-title">DataHub 리니지 소개</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/datahub-project/datahub/blob/master/docs/features/feature-guides/lineage.md">lineage.md</a></span><span>원본 커밋: 2534652</span><span>라이선스: Apache-2.0</span><span>언어: 한국어</span><span>번역일: 2026-11-04</span>
+      </div>
+      <article>
+<h1 id="about-datahub-lineage">DataHub 리니지 소개</h1>
+<blockquote><p>기능 제공 범위: DataHub Core, DataHub Cloud</p></blockquote>
+<p>데이터 리니지(data lineage)는 <mark>조직 내에서 데이터가 어떻게 흐르는지 보여 주는 지도입니다.</mark> 데이터가 어디에서 시작되어 어떻게 이동하고 최종적으로 어디에 도달하는지를 자세히 보여 줍니다.
+이러한 흐름은 단일 시스템 내에서(Snowflake 테이블 간 데이터 이동 등) 또는 여러 플랫폼에 걸쳐 발생할 수 있습니다.</p>
+<p>직접 살펴보고 싶다면 아래의 대화형 투어를 진행한 뒤 자세한 내용을 읽어 보세요.</p>
+<p>데이터 리니지로 다음을 할 수 있습니다.</p>
+<ul>
+<li>데이터 무결성 유지</li>
+<li>복잡한 관계 단순화 및 정리</li>
+<li><a href="https://github.com/datahub-project/datahub/blob/master/docs/act-on-metadata/impact-analysis.md">리니지 영향 분석</a> 수행</li>
+<li>리니지를 따라 메타데이터(예: <a href="https://github.com/datahub-project/datahub/blob/master/docs/automations/docs-propagation.md">문서</a>) 전파</li>
+</ul>
+<h2 id="viewing-lineage">리니지 보기</h2>
+<p><mark>Lineage</mark> 탭의 <em>Explorer</em> 시각화나 <em>Impact Analysis</em> 도구에서 리니지를 볼 수 있습니다.
+엔터티 사이드바에서 자산의 영향 분석을 한눈에 살펴볼 수도 있습니다.</p>
+<p align="center">
+<img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/lineage/lineage-tab-v3.png" />
+</p>
+<p>기본적으로 UI에는 최신 버전의 리니지가 표시됩니다. 시간 선택기를 사용하면 최신 버전 내에서 마지막 업데이트가 시간 범위를 벗어난 엣지를 제외할 수 있습니다. 시간 범위를 선택해도 과거 리니지가 표시되지는 않습니다. 최신 버전 리니지의 뷰만 필터링합니다.</p>
+<p align="center">
+<img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/lineage/lineage-view-v3.png" />
+</p>
+<p>이 예시에서 데이터는 dbt가 오케스트레이션하는 여러 Snowflake 테이블을 거쳐 Looker 뷰와 explore로 흐릅니다.</p>
+<h3 id="column-level-lineage">컬럼 수준 리니지</h3>
+<p>컬럼 수준 리니지는 <mark>각 데이터 컬럼의 변경과 이동을 추적합니다.</mark> 이 방식은 테이블 수준에서 리니지를 지정하는 테이블 수준 리니지와 자주 대비됩니다. 테이블 수준 리니지를 보는 중에 테이블의 컬럼을 펼치고 리니지가 있는 컬럼에 마우스를 올리거나 클릭하면 컬럼 리니지를 시각화할 수 있습니다.</p>
+<p align="center">
+<img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/lineage/column-level-lineage-v3.png" />
+</p>
+<p>숨겨진 자산에 대한 컬럼 수준 리니지가 있거나 테이블 수준 뷰가 너무 복잡해지면,
+컬럼의 이동 경로(breadcrumb)를 클릭해 단일 컬럼에 초점을 맞춘 리니지를 시각화할 수 있습니다.</p>
+<p align="center">
+<img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/lineage/schema-field-level-lineage-link.png" />
+</p>
+<p align="center">
+<img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/lineage/schema-field-level-lineage.png" />
+</p>
+<h3 id="data-pipeline-lineage">데이터 파이프라인 리니지</h3>
+<p>DataHub는 데이터 리니지와 함께 데이터 파이프라인의 태스크 관계 시각화도 지원합니다. 데이터 파이프라인의
+엔터티 페이지에서 <mark>Lineage</mark> 탭으로 이동하면 시각화가 열립니다. 중앙에는 모든 구성 태스크를 포함하는 상자로
+표현된 데이터 파이프라인 노드가 표시됩니다. 클릭하고 끌어서 상자 안의 각 태스크를 옮기거나
+데이터 파이프라인 상자 자체를 옮길 수 있습니다.</p>
+<p align="center">
+<img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/lineage/dataflow-lineage-tab.png" />
+</p>
+<p>또한 DataHub의 크로스 플랫폼 리니지를 활용해 각 태스크의 업스트림과 다운스트림을 볼 수 있습니다.
+리니지 펼치기 버튼의 숫자는 태스크의 데이터 의존성 업스트림/다운스트림 수를 나타냅니다.
+펼친 뒤에는 표준 리니지 탐색기처럼 리니지를 계속 펼칠 수 있습니다.</p>
+<p align="center">
+<img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/lineage/dataflow-lineage-expand.png" />
+</p>
+<p>시각화를 단순하게 유지하기 위해 한 번에 한 태스크의 업스트림과 한 태스크의 다운스트림만 펼칠 수 있습니다.</p>
+<p align="center">
+<img width="80%" src="https://raw.githubusercontent.com/datahub-project/static-assets/main/imgs/lineage/dataflow-lineage-expand-2.png" />
+</p>
+<h2 id="adding-lineage">리니지 추가하기</h2>
+<h3 id="ingestion-source">수집 소스</h3>
+<p>리니지 추출을 지원하는 수집 소스(예: <mark>Table Lineage Capability</mark>)를 사용한다면 리니지 정보를 자동으로 추출할 수 있습니다. 자동 리니지 추출을 지원하는 소스 목록은
+<a href="https://docs.datahub.com/docs/generated/lineage/automatic-lineage-extraction">여기</a>에서 확인할 수 있습니다.
+자세한 지침은 사용 중인 소스의 <a href="https://docs.datahub.com/integrations">소스 문서</a>를 참고하세요.</p>
+<h3 id="ui">UI</h3>
+<p><code>v0.9.5</code>부터 DataHub는 엔터티 간 리니지의 수동 편집을 지원합니다. 데이터 전문가는 리니지 시각화 화면과 엔터티 페이지의 Lineage 탭에서 업스트림 및 다운스트림 리니지 엣지를 자유롭게 추가하거나 제거할 수 있습니다. 자동 리니지 추출을 보완하거나, 자동 추출을 지원하지 않는 소스에서 중요한 엔터티 관계를 설정하는 데 이 기능을 사용하세요. 수동 리니지 편집은 Datasets, Charts, Dashboards, Data Jobs에서 지원합니다.
+자세한 내용은 <a href="ui-lineage_ko.html">리니지 UI 가이드</a>를 참고하세요.</p>
+<blockquote>
+<p><strong>주의: UI 기반 리니지 관련 권장 사항</strong></p>
+<p>수동으로 추가한 리니지와 프로그래밍 방식으로 추가한 리니지가 서로 충돌해 원치 않는 덮어쓰기가 발생할 수 있습니다.
+수집 소스 실행 등으로 리니지 정보를 자동 추출하지 않는 경우에만 리니지를 수동으로 편집할 것을 강력히 권장합니다. 리니지가 자동으로 수집되는 엔터티의 리니지를 수동으로 편집하려면, 해당 수집 소스가 <code>incremental_lineage</code>를 지원하는지 확인하고 지원한다면 이 구성 플래그를 활성화하는 것을 고려하세요. 이 플래그를 설정하면 이전에 존재하던 리니지 엣지가 제거되지 않으므로, 현재 리니지를 정확히 파악하려면 시간 기반 필터링을 사용해야 할 수 있습니다.</p>
+</blockquote>
+<h3 id="api">API</h3>
+<p>리니지를 지원하는 수집 소스를 사용하지 않는다면 API로 엔터티 간 리니지 엣지를 프로그래밍 방식으로 내보낼 수 있습니다.
+자세한 내용은 <a href="https://github.com/datahub-project/datahub/blob/master/docs/api/tutorials/lineage.md">리니지 API 가이드</a>를 참고하세요.</p>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>
