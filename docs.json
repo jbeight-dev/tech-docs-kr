@@ -650,5 +650,16 @@
     "path": "prompt.html",
     "written_at": "2026-11-05",
     "tags": ["ChatGPT", "프롬프트", "요약", "인수인계"]
+  },
+  {
+    "id": "anthropic-effective-context-engineering-for-ai-agents",
+    "title": "AI 에이전트를 위한 효과적인 컨텍스트 엔지니어링",
+    "category": "Anthropic",
+    "description": "에이전트의 제한된 컨텍스트를 선별하고 압축, 구조화된 노트 작성, 서브에이전트로 관리하는 전략을 설명합니다.",
+    "path": "anthropic/effective-context-engineering-for-ai-agents_ko.html",
+    "translated_at": "2026-11-05",
+    "source_url": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents",
+    "license": "미확인",
+    "tags": ["컨텍스트 엔지니어링", "agent memory", "에이전트 메모리", "프롬프트 엔지니어링"]
   }
 ]
