@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이미지 파이프라인: 설정 키와 트레이스 키의 명명 규칙</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Diagrams: inline SVG, colors follow the theme */
+  .diagram { margin: 0 0 .5em; overflow-x: auto; }
+  .diagram svg { display: block; margin: 0 auto; }
+  .diagram text { font: 13px "SFMono-Regular", Consolas, "Liberation Mono", "Apple SD Gothic Neo", "Malgun Gothic", monospace; fill: var(--text); text-anchor: middle; dominant-baseline: central; }
+  .d-node rect { fill: var(--surface); stroke: var(--text-muted); stroke-width: 1.25; }
+  .d-edge { fill: none; stroke: var(--text-muted); stroke-width: 1.25; marker-end: url(#d-arrow); }
+  .diagram text.d-label { font-size: 12px; fill: var(--text-muted); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+  .diagram-src { font-size: 13px; color: var(--text-muted); }
+  .diagram-src summary { cursor: pointer; margin-bottom: .5em; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img, .diagram { page-break-inside: avoid; }
+    .diagram svg { max-width: 100%; height: auto; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+</style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <marker id="d-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 8 4 0 8z" style="fill: var(--text-muted)"/></marker>
+  </defs></svg>
+  <header class="site-header">
+    <div class="document-title">이미지 파이프라인: 설정 키와 트레이스 키의 명명 규칙</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://github.com/Tencent/WeKnora/blob/main/docs/design/image-pipeline-naming.md">image-pipeline-naming.md</a></span><span>언어: 한국어</span><span>번역일: 2026-11-12</span>
+      </div>
+      <article>
+<h1>이미지 파이프라인: 설정 키와 트레이스 키의 명명 규칙</h1>
+<p>상태: 시행 중(「문서 사진 OCR 전 기하 전처리」와 함께 도입) 적용 범위: <code>internal/application/service/image_*.go</code>, <code>internal/types/image_actions.go</code>, <code>internal/types/knowledgebase.go</code>, 프런트엔드 지식베이스 설정 패널</p>
+<p>이 문서는 <mark>장기 규칙</mark>입니다. 파이프라인, 액션, 파라미터, 트레이스 필드를 새로 추가할 때는 이 문서에 따라 이름을 짓고, 기존 키 이름을 바꿀 때는 §6의 목록에 따라 소비 측을 함께 수정합니다.
+기계적으로 검사할 수 있는 부분은 모두 테스트로 고정해 두었습니다(§7). 따라서 이 "규칙"은 단순한 관례가 아니며, 어기면 테스트가 실패합니다.</p>
+
+<h2>0. 하나의 대원칙</h2>
+<blockquote><p><mark>이름 = 소속 + 이름. "소속"은 같은 컨테이너에 여러 주체가 쓸 때만 드러내 적는다.</mark></p></blockquote>
+<p>이 원칙 하나로 "왜 액션에는 접두사를 붙이고 파이프라인에는 붙이지 않는가"와 "왜 DB에 저장하는 키는 밑줄을, 파라미터는 점을 쓰는가"를 함께 설명할 수 있습니다.</p>
+
+<h2>1. 세 가지 컨테이너, 세 가지 키 형태</h2>
+<table>
+<thead><tr><th>컨테이너</th><th>누가 쓰는가</th><th>키 형태</th><th>예</th></tr></thead>
+<tbody>
+<tr><td><mark>설정</mark>(<code>image_processing_config</code> 필드 / <code>image_pipeline_params</code> 슬롯)</td><td>패널과 API(사용자의 선택)</td><td>KB 필드는 snake_case, 파라미터는 <code>&lt;pipeline&gt;.&lt;key&gt;</code> 또는 <code>&lt;pipeline&gt;.&lt;action&gt;.&lt;name&gt;</code></td><td><code>image_attrs_enabled</code>, <code>default.ocr_enabled</code>, <code>smartocr.preprocess.mode</code></td></tr>
+<tr><td><mark>DB 저장 산출물</mark>(<code>chunks.image_info</code>, 지식과 함께 이동)</td><td>액션 자신</td><td>명사, snake_case, 상태어 없음</td><td><code>caption</code>, <code>ocr_text</code>, <code>attrs</code>, <code>sha256</code></td></tr>
+<tr><td><mark>처리 트레이스</mark>(span output, <code>runContext.out</code>)</td><td>여러 액션 + 프레임워크 + 서비스 계층</td><td><code>config</code> 컨테이너(설정 에코) · <code>&lt;action&gt;.result</code> · <code>&lt;action&gt;.&lt;数据名&gt;</code>(데이터 이름) · 이미지 수준의 접두사 없는 이름</td><td><code>config</code>, <code>ocr.result</code>, <code>ocr.chars</code>, <code>outcome</code>, <code>actions</code></td></tr>
+</tbody>
+</table>
+<p><mark>점은 "소속 경계"에만 씁니다</mark>(한 단계). 이름 내부에는 밑줄만 쓰고, <mark>한 세그먼트 안에 점이 또 나와서는 안 됩니다</mark>(그러면 경로 분리가 모호해집니다. §8 참고).</p>
+<p>슬롯은 <mark>저장 위치</mark>이지 두 번째 소속이 아닙니다. 어떤 설정이 누구 이름으로 쓰였다면 그 주체의 슬롯에 저장되고(<code>types.SlotKey</code>가 생성하고 <code>types.ImagePipelineParam</code>이 읽어 옵니다), <mark>오직 그곳에만 저장됩니다</mark>. 다른 철자로 대신 찾아보는 대체 경로는 없습니다. 읽히지 않으면 "저장된 적 없음"이며, 양쪽 모두 필드 선언의 기본값으로 돌아갑니다.</p>
+<p>이 규칙은 <code>preprocess.mode</code>와 <code>ocr_on_unobserved</code>에도 똑같이 적용됩니다. 두 키는 한때 지식베이스 최상위(<code>preprocess_mode</code>, <code>image_actions.ocr.on_unobserved</code>)에 있었지만, 슬롯으로 옮길 때 <mark>호환 읽기를 남기지 않았습니다</mark>. 두 키 모두 main에 들어간 적이 없어 배려해야 할 기존 데이터가 없으므로, 이전 값은 모두 버리고 새 기본값으로 다시 설정하면 됩니다("사용자가 업로드하거나 다시 파싱할 때 반드시 설정 패널을 한 번 거친다"는 점이 이번에 과감히 버릴 수 있었던 전제입니다). 프런트엔드도 같은 규칙을 그대로 따릅니다(<code>pipelineParamKey</code> / <code>readPipelineParam</code>). 양쪽의 읽기 방식이 같아야 "패널에 보이는 값이 곧 런타임에 쓰는 값"이 됩니다.</p>
+
+<h2>2. 소속 판단 기준: 튜닝 항목을 "액션"에 둘까, "파이프라인"에 둘까</h2>
+<p>다음 두 질문을 순서대로 던집니다.</p>
+<ol>
+<li><mark>이 파라미터는 무엇을 결정하는가?</mark>
+<ul>
+<li><mark>이 액션 자신이 어떻게 실행되는지</mark>(호출 방식, 내부 하위 항목, 개입 전략)를 결정하면 → <mark>액션 전용</mark>: <code>&lt;pipeline&gt;.&lt;action&gt;.&lt;name&gt;</code></li>
+<li><mark>다른 액션을 실행할지 / 실행 순서 / 여러 액션 사이의 선택</mark>(오케스트레이션)을 결정하면 → <mark>파이프라인 전용</mark>: <code>&lt;pipeline&gt;.&lt;name&gt;</code></li>
+<li><mark>지식베이스 전체의 스위치와 선택</mark>에 속하면 → <mark>KB 필드</mark>: snake_case</li>
+</ul></li>
+<li><mark>재사용했을 때 의미가 안정적인가?</mark> 같은 액션을 다른 파이프라인이 재사용해도 의미가 그대로라면 → 액션 전용입니다(필드 정의, 문구, 패널 렌더링을 하나로 재사용할 수 있습니다).</li>
+</ol>
+<blockquote><p>판단 기준은 "주어가 누구인가"가 아닙니다. 예를 들어 <code>ocr_on_unobserved</code>의 주어는 OCR이지만, 이 값은 "관찰에 실패했을 때 OCR을 계속 스케줄링할지"를 결정합니다. 이는 오케스트레이션이므로 <mark>파이프라인 전용</mark>입니다.</p></blockquote>
+<p><mark>전략은 설정에 속하고 상태에 속하지 않습니다.</mark> 속성 전략(어떤 관측값이 OCR을 트리거하는지, 관측되지 않으면 어떻게 할지)은 사용자/KB의 선택이며 스위치와 같은 급입니다. 한 번의 실행이 그 전략에 따라 <mark>어떤 결정을 내렸는지</mark>가 상태입니다.</p>
+
+<h2>3. 세 계열의 어형(컨테이너를 넘나들어도 섞이지 않음)</h2>
+<table>
+<thead><tr><th>계열</th><th>어형</th><th>예</th></tr></thead>
+<tbody>
+<tr><td><mark>설정 계열</mark></td><td><code>*_enabled</code> · <code>mode</code> · 전략 이름</td><td><code>ocr_enabled</code>, <code>thinking_enabled</code>, <code>preprocess.mode</code>, <code>ocr_on_unobserved</code></td></tr>
+<tr><td><mark>상태 계열</mark></td><td><code>&lt;action&gt;.result</code>, 값 = 상태어 + 원인</td><td><code>ocr.result = skipped_no_text</code></td></tr>
+<tr><td><mark>데이터 계열</mark></td><td>명사: <code>chars</code> / <code>raw_chars</code> / <code>preview</code> / <code>bytes</code> / <code>error</code> / <code>error_code</code> / <code>attrs</code></td><td><code>ocr.chars</code>, <code>preprocess.bytes</code>, <code>image_bytes</code></td></tr>
+</tbody>
+</table>
+<ul>
+<li>불리언 스위치는 <code>&lt;name&gt;_enabled</code>로 통일합니다(시스템의 기존 관례와 일치: <code>&lt;name&gt;_enabled</code>가 십여 곳, <code>enable_*</code>는 옛 표기 세 곳).</li>
+<li><mark>별도의 reason 키를 두지 않습니다.</mark> 원인은 <code>result</code> 값에 합칩니다(<code>skipped_no_text</code>, <code>skipped_declined</code> …).</li>
+<li>한 owner의 <mark>한 측면에는 키 하나</mark>만 두고, 같은 사실을 두 곳에 기록하지 않습니다.</li>
+</ul>
+
+<h2>4. 상태어와 결과 어휘표</h2>
+<p>상태어는 시스템의 기존 span 상태(<code>types/knowledge_span.go</code>의 <code>pending/running/done/failed/skipped/cancelled</code>)에서 가져오며, 이 규칙은 그 부분집합에 원인 접미사를 붙여서만 씁니다.</p>
+<table>
+<thead><tr><th>키</th><th>값</th></tr></thead>
+<tbody>
+<tr><td><code>caption.result</code></td><td><code>done</code> / <code>empty</code> / <code>skipped_disabled</code> / <code>failed</code></td></tr>
+<tr><td><code>observation.caption_result</code></td><td>위와 같음(스마트 모드에서 설명은 관찰의 부산물)</td></tr>
+<tr><td><code>observation.result</code></td><td><code>all_done</code> / <code>partial</code> / <code>none</code> / <code>failed</code>(<mark>속성 차원만 다룸</mark>)</td></tr>
+<tr><td><code>preprocess.result</code></td><td><code>done</code> / <code>failed</code> / <code>skipped_no_capability</code> / <code>skipped_off</code> / <code>skipped_no_text</code> / <code>skipped_already_tidy</code> / <code>skipped_declined</code></td></tr>
+<tr><td><code>ocr.result</code></td><td><code>done</code> / <code>failed</code> / <code>skipped_no_text</code> / <code>skipped_attr_policy</code> / <code>skipped_observation_failed</code></td></tr>
+<tr><td><code>outcome</code>(이미지 수준)</td><td><code>done</code> / <code>partial_failure</code> / <code>failed</code> / <code>skipped_unreadable_image</code> / <code>skipped_no_content</code></td></tr>
+</tbody>
+</table>
+<p>세 계층의 "상태어" 역할 분담: span의 <code>status</code>(프레임워크: 끝까지 실행됐는가) / 액션의 <code>result</code>(이 단계에서 무엇을 얻었는가) / 이미지의 <code>outcome</code>(이미지 전체가 어떻게 됐는가).</p>
+
+<h2>5. 계약 키와 진단 키</h2>
+<ul>
+<li><mark>계약 키</mark>: 프로덕션 소비자가 있는 키입니다(트레이스에 쓴 뒤 누군가 다시 읽어 갑니다). 예를 들어 <code>ocr.result</code>(하위 span의 성공/실패와 이미지 전체를 "산출물 없음"으로 볼지 결정), <code>ocr.error_code</code>(span의 <code>error_code</code>로 들어가며 프런트엔드가 현지화된 제목에 사용)가 있습니다.
+<mark>계약 키는 상수를 씁니다</mark>(쓰기와 읽기가 한 곳의 정의를 공유하고, 상수 주석에 소비자를 명시합니다). 쓰기와 읽기는 서로 다른 함수에 있으므로, 두 곳의 리터럴을 맞춰 두는 방식은 언젠가 어긋납니다.</li>
+<li><mark>진단 키</mark>: 프로덕션에서 읽는 곳이 없고 사람, 로그, 테스트만 봅니다(<code>preprocess.*</code>, <code>ocr.preview</code>, <code>config</code> 등). 자유롭게 이름을 바꿀 수 있으며 이름만 고치면 됩니다.</li>
+<li>둘을 구분하는 이유: <mark>변경 위험이 한눈에 드러납니다</mark>.</li>
+</ul>
+
+<h2>6. 키 이름을 바꿀 때 함께 고칠 곳</h2>
+<ol>
+<li><mark>쓰기 지점</mark>(액션/프레임워크/서비스 계층)</li>
+<li><mark>읽기 지점(소비자)</mark> — 가장 빠뜨리기 쉽습니다.
+<ul>
+<li>액션 안의 <code>resolve()</code> 클로저(<code>*.error_code</code> / <code>*.error</code> / <code>*.chars</code>를 다시 읽어 span의 성공/실패를 결정)</li>
+<li>파이프라인의 결정 지점(<code>observation.result</code>를 읽어 skip 원인을 결정)</li>
+<li>서비스 계층의 이미지 전체 판정(<code>ocr.result</code> / <code>caption.error</code>를 읽어 <code>outcome</code>과 작업 계층에 오류를 보고할지 결정)</li>
+</ul></li>
+<li><mark>프런트엔드</mark>: 설정 패널의 i18n 문구 경로(<code>imagePipeline.&lt;pipeline&gt;.&lt;field.key&gt;.&lt;label|description&gt;</code>, 문구가 없으면 백엔드 Label로 자동 대체), 처리 타임라인의 <code>error_code</code> 문구</li>
+<li><mark>테스트</mark>: golden 시퀀스 테스트, 속성 결정 테스트, 오류 코드 테스트</li>
+<li><mark>문서</mark>: 이 파일과 관련 인터페이스의 doc comment</li>
+<li><mark>프런트엔드 슬롯 미러</mark>: <code>frontend/src/utils/imageProcessingConfig.ts</code>의 <code>pipelineParamKey</code> / <code>readPipelineParam</code>(<code>types.SlotKey</code> / <code>types.ImagePipelineParam</code>에 대응). 양쪽 철자가 반드시 같아야 합니다. 다르면 패널에서 쓴 값을 런타임이 읽지 못합니다. 프런트엔드는 <mark>필드 이름을 알지 못합니다</mark>. 레지스트리가 넘겨준 필드를 렌더링하고 슬롯 단위로 읽고 쓰므로, 필드를 추가·삭제하거나 이름을 바꿔도 프런트엔드를 고칠 필요가 없습니다.</li>
+</ol>
+
+<h2>7. 어떤 테스트로 고정하는가</h2>
+<table>
+<thead><tr><th>규칙</th><th>테스트</th></tr></thead>
+<tbody>
+<tr><td>액션이 선언한 키는 반드시 자신의 액션 id를 접두사로 가져야 하며, 접두사 없는 이름에는 점이 없어야 한다</td><td><code>TestDeclaredActionFieldsAreNamespaced</code>(<code>internal/types</code>)</td></tr>
+<tr><td>파이프라인은 액션이 선언한 점 포함 키만 가질 수 있고, 직접 만들어서는 안 된다</td><td><code>TestPipelineFieldKeysAreOwned</code></td></tr>
+<tr><td>같은 owner 안에서 키는 유일하다</td><td><code>TestPipelineFieldsArePrivate</code>, <code>TestFieldDeclarationOrder</code></td></tr>
+<tr><td>파라미터는 파이프라인별로 격리되고, 슬롯이 없는 키는 값으로 치지 않으며, 기본값으로 돌아간다</td><td><code>TestParamIsIsolatedPerPipeline</code>, <code>TestParamReadsOnlyItsOwnNamespace</code></td></tr>
+<tr><td>파이프라인이 선언한 필드는 세 구역(상시 / 고급 / 설명)으로 나뉘며, 순서가 곧 패널 순서다</td><td><code>TestFieldDeclarationOrder</code></td></tr>
+<tr><td>실제로 실행되는 액션 시퀀스</td><td><code>TestImagePipelineActionSequences</code></td></tr>
+<tr><td><mark>설정은 결과와 같은 형태여서는 안 된다</mark>(마지막 세그먼트가 <code>result</code>/<code>chars</code>/<code>bytes</code>… 이면 안 됨)</td><td><code>TestNoSettingIsNamedLikeAResult</code></td></tr>
+<tr><td><mark><code>&lt;action&gt;.result</code>는 액션 id로 조립</mark>하며, 키 접두사는 반드시 등록된 액션이어야 한다</td><td><code>TestActionResultKeysAreNamedAfterTheirAction</code>, <code>TestEveryActionTraceKeyCarriesAnActionNamespace</code></td></tr>
+<tr><td><mark>모든 result 값은 어휘표 안에 있다</mark>(한 분기에서만 쓰는 값 포함)</td><td><code>TestTraceResultsStayInTheirVocabulary</code></td></tr>
+<tr><td>슬롯 조립 시 접두사를 중복하지 않고, 슬롯만 인정하며, nil 슬롯은 미설정으로 본다</td><td><code>TestSlotKeyDoesNotDoubleThePipelineID</code>, <code>TestImagePipelineParamReadsOnlyTheSlot</code></td></tr>
+<tr><td><mark>실행이 읽은 설정 = 트레이스가 에코한 설정</mark></td><td><code>TestTheRunReadsTheSettingItsTraceEchoes</code></td></tr>
+<tr><td>프런트엔드가 쓰는 키와 읽는 키가 같고, 방식을 전환해도 파라미터를 잃지 않는다</td><td><code>ImagePipelineSettings.test.ts</code>, <code>imageProcessingConfig.test.ts</code></td></tr>
+</tbody>
+</table>
+
+<h2>8. 알려진 제약</h2>
+<ul>
+<li><mark>점 포함 키</mark>는 string-keyed map 안의 평범한 문자열입니다(Go / JSON / JSONB 모두 문법 문제가 없습니다). 다만 다음 제약이 있습니다.
+<ol>
+<li>세그먼트 안에 점이 또 나와서는 안 됩니다.</li>
+<li>구조체 필드 이름이나 DB 열 이름으로 쓸 수 없습니다(그래서 DB에 저장하는 <code>image_info</code>는 밑줄을 씁니다).</li>
+<li>TOML / YAML처럼 "점이 곧 구조"인 형식에는 담을 수 없습니다. 나중에 내보내야 한다면 이스케이프하거나 이름을 바꿔야 합니다.</li>
+<li>jq로 값을 꺼내려면 <code>.["smartocr.ocr.thinking_enabled"]</code>로 써야 합니다.</li>
+</ol></li>
+<li>파라미터 슬롯의 접두사는 문자열 연결(<code>"&lt;pipeline&gt;.&lt;key&gt;"</code>)입니다. 나중에 역으로 파싱해야 한다면 규칙은 "첫 번째 점에서 자른다"(<code>strings.Cut</code>)입니다.</li>
+</ul>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

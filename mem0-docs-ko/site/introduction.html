@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>기억하는 AI 앱 만들기 · Mem0 문서 (비공식 한국어)</title>
+<meta name="description" content="Mem0 Platform이나 직접 운영하는 오픈소스 버전으로 AI 앱에 영구적이고 스스로 개선되는 메모리를 추가합니다.">
+<link rel="icon" href="./favicon.svg">
+<link rel="stylesheet" href="./assets/site.css">
+<script>(function(){var t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)})();</script>
+<script src="./assets/nav.js" defer></script>
+<script src="./assets/site.js" defer></script>
+</head>
+<body data-root="." data-slug="introduction">
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<header class="top">
+  <button id="nav-toggle" type="button" aria-expanded="false" aria-controls="sidebar">메뉴</button>
+  <a class="brand" href="./introduction.html">Mem0 문서 <span class="muted">비공식 한국어</span></a>
+  <div class="search" role="search"><input id="search" type="search" placeholder="본문 검색" aria-label="문서 본문 검색" autocomplete="off"><div id="search-results" hidden></div></div>
+  <a class="top-link" href="./toc.html">전체 목차</a>
+  <button id="theme" type="button" aria-label="테마 전환">테마</button>
+</header>
+<div class="layout">
+  <nav id="sidebar" aria-label="문서 탐색"><noscript><a href="./toc.html">전체 목차</a></noscript></nav>
+  <main id="content">
+    <p class="notice">비공식 한국어 번역입니다. 공식 문서가 아닙니다. <a href="https://docs.mem0.ai/introduction">원문</a> · 기준 커밋 <a href="https://github.com/mem0ai/mem0/blob/ed1f10fc87080f0b67f99be370817504888462ab/docs/introduction.mdx"><code>ed1f10f</code></a> · <a href="./LICENSE.txt">Apache-2.0</a></p>
+    
+    <h1>기억하는 AI 앱 만들기</h1>
+    <p class="lead">Mem0 Platform이나 직접 운영하는 오픈소스 버전으로 AI 앱에 영구적이고 스스로 개선되는 메모리를 추가합니다.</p>
+    <div><h1><p>함께 만들기: <span>Mem0</span></p></h1><p><p>Mem0는 세션, 도구, 실행이 바뀌어도 유지되는 장기 메모리를 AI 에이전트에 제공합니다.</p></p></div><section><div><a href="platform/quickstart.html"><img class="only-light" src="images/docs thumbnails/light/mem0-platform.png" alt="Mem0 Platform 썸네일"><img class="only-dark" src="images/docs thumbnails/dark/mem0-platform.png" alt="Mem0 Platform 썸네일"><div><h3><p>첫 메모리 저장하기</p></h3><p><p>5분 빠른 시작: API 키를 발급받은 뒤 Python이나 JavaScript로 메모리를 저장하고 검색합니다.</p></p></div></a><a href="integrations/claude-code.html"><img class="only-light" src="images/docs thumbnails/light/mem0-plugins.png" alt="통합 썸네일"><img class="only-dark" src="images/docs thumbnails/dark/mem0-plugins.png" alt="통합 썸네일"><div><h3><p>코딩 에이전트에 메모리 추가하기</p></h3><p><p>Claude Code부터 시작한 뒤 Cursor, Codex, Kimi Code, OpenCode, OpenClaw, Pi Agent, DeepSeek Harness, Antigravity의 개별 가이드를 선택하세요.</p></p></div></a><a href="platform/agent-signup.html"><img class="only-light" src="images/docs thumbnails/light/mem0-cli.png" alt="에이전트로 가입하기 썸네일"><img class="only-dark" src="images/docs thumbnails/dark/mem0-cli.png" alt="에이전트로 가입하기 썸네일"><div><h3><p>AI 에이전트가 직접 가입하게 하기</p></h3><p><p>터미널 명령 4개로 계정과 API 키를 만듭니다. 이메일도 대시보드도 필요 없습니다. 소유권은 나중에 가져오면 됩니다.</p></p></div></a><a href="integrations.html"><img class="only-light" src="images/docs thumbnails/light/mem0-integrations.png" alt="통합 썸네일"><img class="only-dark" src="images/docs thumbnails/dark/mem0-integrations.png" alt="통합 썸네일"><div><h3><p>사용 중인 프레임워크에서 Mem0 쓰기</p></h3><p><p>LangChain, CrewAI, LlamaIndex, Vercel AI SDK를 포함한 도구 22개의 설정 가이드입니다.</p></p></div></a><a href="cookbooks/overview.html"><img class="only-light" src="images/docs thumbnails/light/Cookbooks.png" alt="쿡북 썸네일"><img class="only-dark" src="images/docs thumbnails/dark/Cookbooks.png" alt="쿡북 썸네일"><div><h3><p>동작하는 예제 복사하기</p></h3><p><p>컴패니언 챗봇, 지원 에이전트, 음성 에이전트, 리서치 도구를 처음부터 끝까지 안내합니다.</p></p></div></a><a href="open-source/overview.html"><img class="only-light" src="images/docs thumbnails/light/mem0_open_source.png" alt="Mem0 오픈소스 썸네일"><img class="only-dark" src="images/docs thumbnails/dark/mem0_open_source.png" alt="Mem0 오픈소스 썸네일"><div><h3><p>자체 서버에서 Mem0 실행하기</p></h3><p><p>오픈소스 버전입니다. 라이브러리나 Docker 스택으로 실행하며 데이터는 자체 인프라에 둡니다.</p></p></div></a></div></section>
+  </main>
+  
+</div>
+</body>
+</html>

@@ -661,5 +661,228 @@
     "source_url": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents",
     "license": "미확인",
     "tags": ["컨텍스트 엔지니어링", "agent memory", "에이전트 메모리", "프롬프트 엔지니어링"]
+  },
+  {
+    "id": "weknora-docs-moved",
+    "title": "문서 안내: 문서 이전과 남은 리소스",
+    "category": "WeKnora",
+    "description": "docs 디렉터리 문서를 website-docs로 옮긴 경위와 이 디렉터리에 남긴 엔지니어링 리소스를 안내합니다.",
+    "path": "WeKnora/docs/README_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/README.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "문서"
+    ]
+  },
+  {
+    "id": "weknora-lite",
+    "title": "WeKnora Lite와 표준판의 차이",
+    "category": "WeKnora",
+    "description": "WeKnora Lite와 표준판의 기능·배포 차이, 그리고 Lite의 .env.lite 설정 파일 동작을 설명합니다.",
+    "path": "WeKnora/docs/LITE_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/LITE.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "Lite",
+      "배포",
+      "설정"
+    ]
+  },
+  {
+    "id": "weknora-subpath-deployment",
+    "title": "하위 경로 배포",
+    "category": "WeKnora",
+    "description": "WeKnora를 URL 하위 경로에 배포하기 위한 빌드 설정과 리버스 프록시 구성을 설명합니다.",
+    "path": "WeKnora/docs/subpath-deployment_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/subpath-deployment.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "배포",
+      "Nginx",
+      "리버스 프록시"
+    ]
+  },
+  {
+    "id": "weknora-release-v0.9.0-announcement",
+    "title": "v0.9.0 릴리스 공지",
+    "category": "WeKnora",
+    "description": "WeKnora v0.9.0의 그룹 공지, GitHub Release 본문, 릴리스 순서를 정리한 자료입니다.",
+    "path": "WeKnora/docs/release-v0.9.0-announcement_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/release-v0.9.0-announcement.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "릴리스"
+    ]
+  },
+  {
+    "id": "weknora-release-v0.9.0-audit",
+    "title": "v0.9.0 릴리스 검토 기록",
+    "category": "WeKnora",
+    "description": "v0.9.0 릴리스의 변경 범위, 문서 처리 목록, 검증 결과와 남은 릴리스 단계를 기록합니다.",
+    "path": "WeKnora/docs/release-v0.9.0-audit_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/release-v0.9.0-audit.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "릴리스",
+      "감사"
+    ]
+  },
+  {
+    "id": "weknora-release-v0.8.3-audit",
+    "title": "v0.8.3 릴리스 정리와 문서 대조 기록",
+    "category": "WeKnora",
+    "description": "v0.8.3 릴리스의 문서 대조 결과, 검증 기록, 전체 commit 목록을 정리합니다.",
+    "path": "WeKnora/docs/release-v0.8.3-audit_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/release-v0.8.3-audit.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "릴리스",
+      "감사"
+    ]
+  },
+  {
+    "id": "weknora-image-pipeline-naming",
+    "title": "이미지 파이프라인: 설정 키와 트레이스 키의 명명 규칙",
+    "category": "WeKnora",
+    "description": "이미지 파이프라인의 설정 키, DB 저장 산출물, 트레이스 키의 명명 규칙과 이를 고정하는 테스트를 정의합니다.",
+    "path": "WeKnora/docs/design/image-pipeline-naming_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/design/image-pipeline-naming.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "설계",
+      "이미지 파이프라인",
+      "명명 규칙"
+    ]
+  },
+  {
+    "id": "weknora-confluence-table-markdown",
+    "title": "Confluence 페이지 표 변환 개선 분석",
+    "category": "WeKnora",
+    "description": "Confluence 페이지의 표를 Markdown으로 변환할 때 행·열 구조를 보존하는 방식을 분석합니다.",
+    "path": "WeKnora/docs/design/confluence-table-markdown_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/design/confluence-table-markdown.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "설계",
+      "Confluence",
+      "Markdown"
+    ]
+  },
+  {
+    "id": "weknora-agent-permission-model",
+    "title": "Agent 실행 권한 모델",
+    "category": "WeKnora",
+    "description": "Agent 도구 호출을 바로 실행·확인·거부할지 정하는 단계, 위험 등급, 권한 부여 모델을 설계합니다.",
+    "path": "WeKnora/docs/design/agent-permission-model_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/design/agent-permission-model.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "설계",
+      "Agent",
+      "권한",
+      "HITL"
+    ]
+  },
+  {
+    "id": "weknora-agent-automation",
+    "title": "Agent 자동화(예약 작업)",
+    "category": "WeKnora",
+    "description": "Agent 예약 작업의 데이터 모델, 데이터베이스 기반 스케줄링, 실행 신원과 승인 처리를 설계합니다.",
+    "path": "WeKnora/docs/design/agent-automation_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/design/agent-automation.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "설계",
+      "Agent",
+      "자동화",
+      "스케줄링"
+    ]
+  },
+  {
+    "id": "weknora-agent-hitl-suspend-resume",
+    "title": "Agent 사람 상호작용(HITL): 2단계 일시 중단과 복구",
+    "category": "WeKnora",
+    "description": "Agent의 사람 상호작용 요청을 짧은 대기와 영속 일시 중단 두 단계로 처리하고 어느 복제본에서든 복구하는 방식을 설계합니다.",
+    "path": "WeKnora/docs/design/agent-hitl-suspend-resume_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/design/agent-hitl-suspend-resume.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "설계",
+      "Agent",
+      "HITL",
+      "승인"
+    ]
+  },
+  {
+    "id": "weknora-assistant-agent-collaboration",
+    "title": "Assistant 위임과 하위 Agent 협업",
+    "category": "WeKnora",
+    "description": "어시스턴트가 6개 협업 도구로 하위 Agent에 작업을 위임·대기·재작업하는 구조와 구현 현황을 설명합니다.",
+    "path": "WeKnora/docs/design/assistant-agent-collaboration_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/design/assistant-agent-collaboration.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "설계",
+      "Agent",
+      "멀티 에이전트",
+      "협업"
+    ]
+  },
+  {
+    "id": "weknora-poc-docker-sandbox",
+    "title": "Docker 샌드박스 백엔드 타당성 PoC",
+    "category": "WeKnora",
+    "description": "Docker가 WeKnora 샌드박스 계약과 Snapshot 워크플로를 감당할 수 있는지 검증한 PoC를 설명합니다.",
+    "path": "WeKnora/docs/poc/docker-sandbox/README_ko.html",
+    "translated_at": "2026-11-12",
+    "source_url": "https://github.com/Tencent/WeKnora/blob/main/docs/poc/docker-sandbox/README.md",
+    "license": "MIT",
+    "tags": [
+      "WeKnora",
+      "샌드박스",
+      "Docker",
+      "PoC"
+    ]
+  },
+  {
+    "id": "karpathy-llm-wiki",
+    "title": "LLM Wiki",
+    "category": "Karpathy",
+    "description": "LLM이 원본 자료를 읽어 영속적인 markdown 위키를 점진적으로 구축하고 유지 관리하게 하는 개인 지식 베이스 패턴을 설명합니다.",
+    "path": "llmwiki/llm-wiki_ko.html",
+    "translated_at": "2026-11-11",
+    "source_url": "https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f",
+    "license": "미확인",
+    "tags": [
+      "LLM",
+      "위키",
+      "지식 베이스",
+      "Obsidian",
+      "RAG"
+    ]
   }
 ]

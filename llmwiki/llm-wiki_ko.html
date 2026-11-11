@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Wiki</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script>
+  // 깜빡임 방지: 렌더 전에 테마 적용 (localStorage → OS → light)
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  /* Theme Variables */
+  :root {
+    --bg: #ffffff; --surface: #f6f8fa; --text: #24292f; --text-muted: #57606a;
+    --border: #d0d7de; --accent: #0969da; --code-bg: #f6f8fa; --hover: #eaeef2;
+    --mark: #a5e4ff;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+    --border: #30363d; --accent: #58a6ff; --code-bg: #161b22; --hover: #21262d;
+    --mark: rgba(56, 189, 248, .35);
+  }
+
+  /* Highlighter */
+  mark { background: linear-gradient(transparent 45%, var(--mark) 45%); color: inherit; padding: 0 .1em; }
+
+  /* Typography */
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 72px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.75; font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.4; margin: 2em 0 .75em; }
+  h1 { font-size: 2em; margin-top: 0; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: var(--text-muted); }
+  p, ul, ol, blockquote, table, pre, details { margin: 0 0 1em; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+  blockquote { margin-left: 0; padding: 0 1em; color: var(--text-muted); border-left: 4px solid var(--border); }
+  li + li { margin-top: .25em; }
+  ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+  .footnotes { font-size: .9em; color: var(--text-muted); }
+
+  /* Layout */
+  .site-header {
+    position: sticky; top: 0; z-index: 10; height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .document-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { background: var(--hover); }
+  .layout { display: flex; max-width: 1240px; margin: 0 auto; }
+  .content { flex: 1; min-width: 0; max-width: 960px; padding: 32px 40px 80px; }
+  .doc-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .doc-meta span + span::before { content: " · "; }
+
+  /* Sidebar */
+  .toc { width: 260px; flex-shrink: 0; }
+  .toc details { position: sticky; top: 56px; max-height: calc(100vh - 56px); overflow-y: auto; padding: 24px 16px; margin: 0; }
+  .toc summary { font-weight: 600; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 8px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+  .toc li { margin: 0; }
+  .toc a { display: block; padding: 4px 8px; color: var(--text-muted); border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--hover); text-decoration: none; }
+  .toc a.active { color: var(--accent); border-left-color: var(--accent); }
+  .toc .lvl-3 a { padding-left: 20px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin-bottom: 1em; }
+  table { border-collapse: collapse; margin: 0; }
+  th, td { border: 1px solid var(--border); padding: 6px 13px; text-align: left; vertical-align: top; }
+  th { background: var(--surface); font-weight: 600; }
+
+  /* Code Blocks */
+  pre, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  :not(pre) > code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: .1em .35em; }
+  .code-wrap { position: relative; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 2px 8px; opacity: .8; }
+  .copy-btn:hover { opacity: 1; }
+
+  /* Diagrams: inline SVG, colors follow the theme */
+  .diagram { margin: 0 0 .5em; overflow-x: auto; }
+  .diagram svg { display: block; margin: 0 auto; }
+  .diagram text { font: 13px "SFMono-Regular", Consolas, "Liberation Mono", "Apple SD Gothic Neo", "Malgun Gothic", monospace; fill: var(--text); text-anchor: middle; dominant-baseline: central; }
+  .d-node rect { fill: var(--surface); stroke: var(--text-muted); stroke-width: 1.25; }
+  .d-edge { fill: none; stroke: var(--text-muted); stroke-width: 1.25; marker-end: url(#d-arrow); }
+  .diagram text.d-label { font-size: 12px; fill: var(--text-muted); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+  .diagram-src { font-size: 13px; color: var(--text-muted); }
+  .diagram-src summary { cursor: pointer; margin-bottom: .5em; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    .layout { display: block; }
+    .toc { width: auto; border-bottom: 1px solid var(--border); }
+    .toc details { position: static; max-height: none; padding: 12px 16px; }
+    .content { padding: 24px 16px 64px; }
+  }
+
+  /* Print */
+  @media print {
+    :root, [data-theme="dark"] { --bg: #fff; --surface: #f6f8fa; --text: #000; --text-muted: #444; --border: #ccc; --accent: #0550ae; --code-bg: #f6f8fa; }
+    .site-header { position: static; }
+    #theme-toggle, .toc, .copy-btn { display: none !important; }
+    .content { max-width: none; padding: 0; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    pre, table, blockquote, img, .diagram { page-break-inside: avoid; }
+    .diagram svg { max-width: 100%; height: auto; }
+    h1, h2, h3, h4 { page-break-after: avoid; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: var(--text-muted); }
+  }
+</style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <marker id="d-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 8 4 0 8z" style="fill: var(--text-muted)"/></marker>
+  </defs></svg>
+  <header class="site-header">
+    <div class="document-title">LLM Wiki</div>
+    <button id="theme-toggle" type="button" aria-label="테마 변경">테마 변경</button>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <details open><summary>목차</summary><nav><ul></ul></nav></details>
+    </aside>
+    <main class="content">
+      <div class="doc-meta">
+        <span>원본: <a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f">llm-wiki.md</a></span><span>언어: 한국어</span><span>번역일: 2026-11-11</span>
+      </div>
+      <article>
+<p>원문: <a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f">https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f</a></p>
+
+<h1>LLM Wiki</h1>
+
+<p>LLM으로 개인 지식 베이스를 구축하는 패턴입니다.</p>
+
+<p>이 문서는 아이디어 파일입니다. 여러분의 LLM 에이전트(예: OpenAI Codex, Claude Code, OpenCode / Pi 등)에 그대로 복사해 붙여 넣도록 만들었습니다. 목표는 큰 그림의 아이디어를 전달하는 것이고, 구체적인 부분은 에이전트가 여러분과 함께 만들어 갑니다.</p>
+
+<h2>핵심 아이디어</h2>
+
+<p>LLM과 문서를 함께 쓰는 경험은 대부분 RAG에 가깝습니다. 파일 묶음을 업로드하면 LLM이 질의 시점에 관련 청크를 검색해 답변을 생성합니다. 이 방식도 동작하지만, LLM은 질문할 때마다 지식을 처음부터 다시 찾아냅니다. 축적되는 것이 없습니다. 문서 다섯 개를 종합해야 하는 미묘한 질문을 던지면, LLM은 매번 관련 조각을 찾아 이어 붙여야 합니다. 쌓이는 것이 아무것도 없습니다. NotebookLM, ChatGPT 파일 업로드, 그리고 대부분의 RAG 시스템이 이렇게 동작합니다.</p>
+
+<p>여기서 제안하는 아이디어는 다릅니다. 질의 시점에 원본 문서에서 검색만 하는 대신, LLM이 <mark>영속적인 위키를 점진적으로 구축하고 유지 관리</mark>합니다. 이 위키는 여러분과 원본 자료 사이에 놓인, 구조화되고 서로 링크된 markdown 파일 모음입니다. 새 자료를 추가하면 LLM은 나중에 검색하려고 인덱싱만 하고 끝내지 않습니다. 자료를 읽고, 핵심 정보를 추출해 기존 위키에 통합합니다. 엔터티 페이지를 갱신하고, 주제 요약을 고치고, 새 데이터가 기존 주장과 모순되는 지점을 표시하고, 발전 중인 종합 내용을 강화하거나 반박합니다. 지식은 한 번 컴파일된 뒤 <em>최신 상태로 유지</em>되며, 질의할 때마다 다시 도출되지 않습니다.</p>
+
+<p>이것이 핵심 차이입니다. <mark>위키는 영속적이고 복리로 쌓이는 산출물입니다.</mark> 상호 참조는 이미 걸려 있습니다. 모순은 이미 표시되어 있습니다. 종합 내용에는 지금까지 읽은 모든 것이 이미 반영되어 있습니다. 자료를 추가하고 질문을 던질 때마다 위키는 계속 풍부해집니다.</p>
+
+<p>위키를 직접 쓰는 일은 없습니다(있어도 드뭅니다). 작성과 유지 관리는 전부 LLM이 합니다. 여러분은 자료 수집, 탐색, 올바른 질문 던지기를 맡습니다. LLM은 지식 베이스가 오랫동안 실제로 쓸모 있게 만드는 온갖 잡일, 즉 요약, 상호 참조, 정리, 기록 관리를 모두 처리합니다. 실제로 저는 한쪽에 LLM 에이전트를, 다른 쪽에 Obsidian을 띄워 둡니다. LLM은 대화를 바탕으로 편집하고, 저는 그 결과를 실시간으로 훑어봅니다. 링크를 따라가고, 그래프 뷰를 확인하고, 갱신된 페이지를 읽습니다. Obsidian은 IDE이고, LLM은 프로그래머이며, 위키는 코드베이스입니다.</p>
+
+<p>이 방식은 다양한 상황에 적용할 수 있습니다. 몇 가지 예를 들면 다음과 같습니다.</p>
+
+<ul>
+<li><mark>개인</mark>: 자신의 목표, 건강, 심리, 자기 계발을 추적합니다. 일기, 아티클, 팟캐스트 노트를 정리해 두고, 시간이 지나며 자신에 대한 구조화된 그림을 쌓아 갑니다.</li>
+<li><mark>연구</mark>: 몇 주에서 몇 달에 걸쳐 한 주제를 깊이 파고듭니다. 논문, 아티클, 보고서를 읽으며 발전하는 논지를 담은 포괄적인 위키를 점진적으로 구축합니다.</li>
+<li><mark>책 읽기</mark>: 읽어 나가며 장마다 정리하고, 인물·주제·플롯 줄기와 그 연결 관계에 대한 페이지를 만들어 갑니다. 다 읽을 즈음에는 풍부한 동반 위키가 생깁니다. <a href="https://tolkiengateway.net/wiki/Main_Page">Tolkien Gateway</a> 같은 팬 위키를 떠올려 보세요. 자원봉사자 커뮤니티가 수년간 만든, 인물·장소·사건·언어를 다루는 수천 개의 상호 링크된 페이지입니다. 읽으면서 이런 것을 개인적으로 만들 수 있고, 상호 참조와 유지 관리는 모두 LLM이 맡습니다.</li>
+<li><mark>비즈니스/팀</mark>: LLM이 유지 관리하는 내부 위키로, Slack 스레드, 회의록, 프로젝트 문서, 고객 통화 내용을 입력으로 받습니다. 사람이 루프에 참여해 갱신 내용을 검토할 수도 있습니다. 팀의 누구도 하기 싫어하는 유지 관리를 LLM이 하므로 위키가 최신 상태로 유지됩니다.</li>
+<li><mark>경쟁 분석, 실사(due diligence), 여행 계획, 강의 노트, 취미 탐구</mark> 등 시간에 걸쳐 지식을 쌓으면서 흩어지지 않고 정리된 상태로 두고 싶은 모든 일에 쓸 수 있습니다.</li>
+</ul>
+
+<h2>아키텍처</h2>
+
+<p>세 개의 계층이 있습니다.</p>
+
+<p><mark>원본 자료(raw sources)</mark>: 직접 선별한 원본 문서 모음입니다. 아티클, 논문, 이미지, 데이터 파일 등이 해당합니다. 이 자료는 불변입니다. LLM은 읽기만 하고 절대 수정하지 않습니다. 이것이 진실 공급원(source of truth)입니다.</p>
+
+<p><mark>위키</mark>: LLM이 생성한 markdown 파일이 들어 있는 디렉터리입니다. 요약, 엔터티 페이지, 개념 페이지, 비교, 개요, 종합 내용이 들어갑니다. 이 계층은 전적으로 LLM의 소유입니다. LLM이 페이지를 만들고, 새 자료가 들어오면 갱신하고, 상호 참조를 유지하고, 모든 내용의 일관성을 지킵니다. 여러분은 읽고, LLM은 씁니다.</p>
+
+<p><mark>스키마</mark>: 위키의 구조, 규칙, 그리고 자료 수집·질문 답변·위키 유지 관리 때 따를 워크플로를 LLM에 알려 주는 문서입니다(예: Claude Code의 CLAUDE.md, Codex의 AGENTS.md). 이것이 핵심 설정 파일입니다. LLM을 범용 챗봇이 아니라 규율 있는 위키 관리자로 만드는 것이 바로 이 파일입니다. 여러분의 분야에서 무엇이 잘 통하는지 알아 가면서 여러분과 LLM이 함께 이 문서를 발전시킵니다.</p>
+
+<h2>작업</h2>
+
+<p><mark>수집(Ingest).</mark> 새 자료를 원본 모음에 넣고 LLM에 처리하라고 지시합니다. 흐름의 예는 다음과 같습니다. LLM이 자료를 읽고, 핵심 내용을 여러분과 논의하고, 위키에 요약 페이지를 쓰고, 인덱스를 갱신하고, 위키 전반의 관련 엔터티·개념 페이지를 갱신하고, 로그에 항목을 추가합니다. 자료 하나가 위키 페이지 10~15개를 건드릴 수도 있습니다. 개인적으로는 자료를 한 번에 하나씩 수집하며 직접 관여하는 편을 선호합니다. 요약을 읽고, 갱신 내용을 확인하고, 무엇을 강조할지 LLM을 이끕니다. 하지만 감독을 줄이고 여러 자료를 한꺼번에 일괄 수집할 수도 있습니다. 자신의 스타일에 맞는 워크플로를 만들고, 이후 세션을 위해 스키마에 문서화하는 것은 여러분의 몫입니다.</p>
+
+<p><mark>질의(Query).</mark> 위키를 대상으로 질문합니다. LLM이 관련 페이지를 찾아 읽고, 인용을 달아 답변을 종합합니다. 답변은 질문에 따라 markdown 페이지, 비교 표, 슬라이드 덱(Marp), 차트(matplotlib), 캔버스 등 여러 형태가 될 수 있습니다. 중요한 통찰은 이것입니다. <mark>좋은 답변은 새 페이지로 위키에 다시 정리해 넣을 수 있습니다.</mark> 요청했던 비교, 분석, 새로 발견한 연결 관계는 가치가 있으므로 채팅 기록 속으로 사라지게 두면 안 됩니다. 이렇게 하면 탐색 결과도 수집한 자료와 똑같이 지식 베이스에 복리로 쌓입니다.</p>
+
+<p><mark>린트(Lint).</mark> 주기적으로 LLM에 위키 상태 점검을 요청합니다. 다음을 찾아봅니다. 페이지 간 모순, 새 자료로 대체된 오래된 주장, 들어오는 링크가 없는 고아 페이지, 언급은 되지만 자기 페이지가 없는 중요한 개념, 빠진 상호 참조, 웹 검색으로 채울 수 있는 데이터 공백. LLM은 조사할 새 질문과 찾아볼 새 자료를 제안하는 데 능숙합니다. 이렇게 하면 위키가 커져도 건강한 상태를 유지합니다.</p>
+
+<h2>인덱싱과 로깅</h2>
+
+<p>특수 파일 두 개가 위키가 커질 때 LLM(과 여러분)의 탐색을 돕습니다. 두 파일의 용도는 서로 다릅니다.</p>
+
+<p><mark>index.md</mark>는 내용 중심입니다. 위키에 있는 모든 것의 카탈로그로, 각 페이지를 링크, 한 줄 요약, 그리고 선택적으로 날짜나 자료 수 같은 메타데이터와 함께 나열합니다. 카테고리(엔터티, 개념, 자료 등)별로 정리합니다. LLM은 수집할 때마다 이 파일을 갱신합니다. 질의에 답할 때 LLM은 먼저 인덱스를 읽어 관련 페이지를 찾은 뒤 해당 페이지를 깊이 읽습니다. 이 방식은 중간 규모(자료 약 100개, 페이지 약 수백 개)에서 놀랄 만큼 잘 동작하며, 임베딩 기반 RAG 인프라가 필요 없습니다.</p>
+
+<p><mark>log.md</mark>는 시간순입니다. 무엇이 언제 일어났는지(수집, 질의, 린트 실행)를 추가만 하는(append-only) 기록입니다. 유용한 팁 하나: 각 항목이 일관된 접두사(예: <code>## [2026-04-02] ingest | Article Title</code>)로 시작하면 간단한 unix 도구로 로그를 파싱할 수 있습니다. <code>grep "^## \[" log.md | tail -5</code>를 실행하면 마지막 항목 5개를 얻습니다. 로그는 위키가 발전해 온 타임라인을 보여 주고, LLM이 최근에 무엇을 했는지 파악하는 데 도움이 됩니다.</p>
+
+<h2>선택 사항: CLI 도구</h2>
+
+<p>어느 시점에는 LLM이 위키를 더 효율적으로 다루도록 돕는 작은 도구를 만들고 싶어질 수 있습니다. 가장 뻔한 것은 위키 페이지 검색 엔진입니다. 규모가 작을 때는 인덱스 파일로 충분하지만, 위키가 커지면 제대로 된 검색이 필요합니다. <a href="https://github.com/tobi/qmd">qmd</a>가 좋은 선택지입니다. markdown 파일용 로컬 검색 엔진으로, BM25/벡터 하이브리드 검색과 LLM 재순위화(re-ranking)를 모두 기기 안에서 수행합니다. CLI(LLM이 셸로 호출할 수 있음)와 MCP 서버(LLM이 네이티브 도구처럼 쓸 수 있음)를 모두 제공합니다. 더 단순한 것을 직접 만들어도 됩니다. 필요해지면 LLM이 간단한 검색 스크립트를 바이브 코딩하도록 도와줄 수 있습니다.</p>
+
+<h2>팁과 요령</h2>
+
+<ul>
+<li><mark>Obsidian Web Clipper</mark>는 웹 아티클을 markdown으로 변환하는 브라우저 확장 프로그램입니다. 자료를 원본 모음에 빠르게 넣을 때 매우 유용합니다.</li>
+<li><mark>이미지를 로컬에 다운로드하세요.</mark> Obsidian 설정 → Files and links에서 "Attachment folder path"를 고정 디렉터리(예: <code>raw/assets/</code>)로 지정합니다. 그런 다음 설정 → Hotkeys에서 "Download"를 검색해 "Download attachments for current file"을 찾고 단축키(예: Ctrl+Shift+D)에 연결합니다. 아티클을 클리핑한 뒤 단축키를 누르면 모든 이미지가 로컬 디스크에 다운로드됩니다. 필수는 아니지만 유용합니다. 깨질 수 있는 URL에 의존하는 대신 LLM이 이미지를 직접 보고 참조할 수 있습니다. 단, LLM은 인라인 이미지가 포함된 markdown을 한 번에 네이티브로 읽지 못합니다. 우회 방법은 LLM이 텍스트를 먼저 읽게 한 뒤, 참조된 이미지 일부 또는 전부를 따로 보게 해 추가 맥락을 얻는 것입니다. 조금 번거롭지만 충분히 잘 동작합니다.</li>
+<li><mark>Obsidian의 그래프 뷰</mark>는 위키의 형태를 보는 가장 좋은 방법입니다. 무엇이 무엇과 연결되어 있는지, 어떤 페이지가 허브이고 어떤 페이지가 고아인지 보여 줍니다.</li>
+<li><mark>Marp</mark>는 markdown 기반 슬라이드 덱 형식입니다. Obsidian용 플러그인이 있습니다. 위키 내용에서 바로 프레젠테이션을 만들 때 유용합니다.</li>
+<li><mark>Dataview</mark>는 페이지 frontmatter를 대상으로 쿼리를 실행하는 Obsidian 플러그인입니다. LLM이 위키 페이지에 YAML frontmatter(태그, 날짜, 자료 수)를 추가하면 Dataview로 동적인 표와 목록을 생성할 수 있습니다.</li>
+<li>위키는 그냥 markdown 파일로 된 git 저장소입니다. 버전 기록, 브랜치, 협업을 공짜로 얻습니다.</li>
+</ul>
+
+<h2>이 방식이 통하는 이유</h2>
+
+<p>지식 베이스를 유지 관리할 때 지루한 부분은 읽기나 생각하기가 아니라 기록 관리입니다. 상호 참조를 갱신하고, 요약을 최신으로 유지하고, 새 데이터가 기존 주장과 모순되는 시점을 표시하고, 수십 개 페이지에 걸쳐 일관성을 유지하는 일입니다. 사람이 위키를 버리는 이유는 유지 관리 부담이 가치보다 빠르게 커지기 때문입니다. LLM은 지루해하지 않고, 상호 참조 갱신을 잊지 않으며, 한 번에 파일 15개를 건드릴 수 있습니다. 유지 관리 비용이 거의 0이므로 위키가 계속 관리됩니다.</p>
+
+<p>사람의 일은 자료를 선별하고, 분석 방향을 정하고, 좋은 질문을 던지고, 그 모든 것이 무엇을 의미하는지 생각하는 것입니다. 나머지는 모두 LLM의 일입니다.</p>
+
+<p>이 아이디어는 정신적으로 Vannevar Bush의 Memex(1945)와 닿아 있습니다. Memex는 문서 사이에 연상 경로(associative trails)가 있는, 개인적이고 선별된 지식 저장소입니다. Bush의 비전은 웹이 실제로 된 모습보다 이쪽에 더 가까웠습니다. 사적이고, 능동적으로 선별되며, 문서 사이의 연결이 문서 자체만큼 가치 있는 모습입니다. 그가 풀지 못한 부분은 유지 관리를 누가 하느냐였습니다. 그 일은 LLM이 맡습니다.</p>
+
+<h2>참고</h2>
+
+<p>이 문서는 의도적으로 추상적입니다. 특정 구현이 아니라 아이디어를 설명합니다. 정확한 디렉터리 구조, 스키마 규칙, 페이지 형식, 도구 구성은 모두 여러분의 분야, 취향, 선택한 LLM에 따라 달라집니다. 위에서 언급한 모든 것은 선택 사항이며 모듈식입니다. 유용한 것은 고르고, 그렇지 않은 것은 무시하세요. 예를 들어 자료가 텍스트뿐이라면 이미지 처리는 전혀 필요 없습니다. 위키가 작다면 인덱스 파일만으로 충분하고 검색 엔진은 필요 없습니다. 슬라이드 덱에는 관심 없고 markdown 페이지만 원할 수도 있습니다. 완전히 다른 출력 형식을 원할 수도 있습니다. 올바른 사용법은 이 문서를 LLM 에이전트와 공유하고, 함께 협업해 여러분의 필요에 맞는 버전을 구체화하는 것입니다. 이 문서의 유일한 역할은 패턴을 전달하는 것입니다. 나머지는 LLM이 알아낼 수 있습니다.</p>
+
+      </article>
+    </main>
+  </div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var article = document.querySelector('article');
+
+  // Theme Toggle
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+
+  // Heading Anchor: id 없는 제목에 id 부여, 중복 제거
+  var used = {};
+  article.querySelectorAll('[id]').forEach(function (el) { used[el.id] = true; });
+  var headings = article.querySelectorAll('h1, h2, h3, h4, h5, h6');
+  headings.forEach(function (h) {
+    if (h.id) return;
+    var base = h.textContent.trim().toLowerCase()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    var id = base, n = 1;
+    while (used[id]) id = base + '-' + n++;
+    used[id] = true;
+    h.id = id;
+  });
+
+  // TOC Navigation (H2, H3)
+  var list = document.querySelector('.toc ul');
+  var links = {};
+  var tocHeadings = article.querySelectorAll('h2, h3');
+  tocHeadings.forEach(function (h) {
+    var li = document.createElement('li');
+    li.className = 'lvl-' + h.tagName[1];
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+    links[h.id] = a;
+  });
+  if (!tocHeadings.length) document.querySelector('.toc').style.display = 'none';
+  var details = document.querySelector('.toc details');
+  if (matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  list.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A' && matchMedia('(max-width: 768px)').matches) details.removeAttribute('open');
+  });
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        if (current) current.classList.remove('active');
+        current = links[en.target.id];
+        if (current) current.classList.add('active');
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+    tocHeadings.forEach(function (h) { io.observe(h); });
+  }
+
+  // Tables: 가로 스크롤 래퍼
+  article.querySelectorAll('table').forEach(function (t) {
+    var w = document.createElement('div');
+    w.className = 'table-wrap';
+    t.parentNode.insertBefore(w, t);
+    w.appendChild(t);
+  });
+
+  // Code Copy
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  article.querySelectorAll('pre').forEach(function (pre) {
+    var wrap = document.createElement('div');
+    wrap.className = 'code-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.innerText;
+      var p = navigator.clipboard && window.isSecureContext
+        ? navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); })
+        : fallbackCopy(text);
+      p.then(function () { btn.textContent = 'Copied!'; }, function () { btn.textContent = '복사 실패'; })
+       .then(function () { setTimeout(function () { btn.textContent = 'Copy'; }, 1500); });
+    });
+    wrap.appendChild(btn);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>메모리 추가 · Mem0 문서 (비공식 한국어)</title>
+<meta name="description" content="V3 추가 전용 파이프라인으로 사실, 메시지, 메타데이터를 사용자 메모리 저장소에 추가합니다. 비동기로 처리하고 이벤트로 추적합니다.">
+<link rel="icon" href="../../favicon.svg">
+<link rel="stylesheet" href="../../assets/site.css">
+<script>(function(){var t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)})();</script>
+<script src="../../assets/nav.js" defer></script>
+<script src="../../assets/site.js" defer></script>
+</head>
+<body data-root="../.." data-slug="api-reference/memory/add-memories">
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<header class="top">
+  <button id="nav-toggle" type="button" aria-expanded="false" aria-controls="sidebar">메뉴</button>
+  <a class="brand" href="../../introduction.html">Mem0 문서 <span class="muted">비공식 한국어</span></a>
+  <div class="search" role="search"><input id="search" type="search" placeholder="본문 검색" aria-label="문서 본문 검색" autocomplete="off"><div id="search-results" hidden></div></div>
+  <a class="top-link" href="../../toc.html">전체 목차</a>
+  <button id="theme" type="button" aria-label="테마 전환">테마</button>
+</header>
+<div class="layout">
+  <nav id="sidebar" aria-label="문서 탐색"><noscript><a href="../../toc.html">전체 목차</a></noscript></nav>
+  <main id="content">
+    <p class="notice">비공식 한국어 번역입니다. 공식 문서가 아닙니다. <a href="https://docs.mem0.ai/api-reference/memory/add-memories">원문</a> · 기준 커밋 <a href="https://github.com/mem0ai/mem0/blob/ed1f10fc87080f0b67f99be370817504888462ab/docs/api-reference/memory/add-memories.mdx"><code>ed1f10f</code></a> · <a href="../../LICENSE.txt">Apache-2.0</a></p>
+    
+    <h1>메모리 추가</h1>
+    <p class="lead">V3 추가 전용 파이프라인으로 사실, 메시지, 메타데이터를 사용자 메모리 저장소에 추가합니다. 비동기로 처리하고 이벤트로 추적합니다.</p>
+    <div class="api"><div class="api-endpoint"><span class="method method-post">POST</span> <code>/v3/memories/add/</code></div><p class="muted">기본 URL: <code>https://api.mem0.ai/</code></p>
+<p>Add memories (V3)</p>
+<p>Extract and store memories from a conversation using the V3 additive pipeline. Entity IDs (`user_id` / `agent_id` / `run_id`) are accepted at the top level. At least one entity ID is required so the memory is scoped to a session.</p>
+<h3>요청 본문</h3>
+<p class="muted"><code>application/json</code></p>
+<div class="table-wrap"><table><thead><tr><th>이름</th><th>타입</th><th>필수</th><th>설명</th></tr></thead><tbody><tr id="body-messages"><td><code>messages</code></td><td><code>object[]</code></td><td>예</td><td>Conversation messages to extract memories from.</td></tr><tr id="body-messages[].role"><td><code>messages[].role</code></td><td><code>string</code></td><td>예</td><td> <span class="muted">허용 값: <code>user</code>, <code>assistant</code>, <code>system</code></span></td></tr><tr id="body-messages[].content"><td><code>messages[].content</code></td><td><code>string</code></td><td>예</td><td></td></tr><tr id="body-user_id"><td><code>user_id</code></td><td><code>string</code></td><td>아니요</td><td>Scope memories to this user.</td></tr><tr id="body-agent_id"><td><code>agent_id</code></td><td><code>string</code></td><td>아니요</td><td>Scope memories to this agent.</td></tr><tr id="body-run_id"><td><code>run_id</code></td><td><code>string</code></td><td>아니요</td><td>Scope memories to this session / run.</td></tr><tr id="body-metadata"><td><code>metadata</code></td><td><code>object</code></td><td>아니요</td><td>User-supplied metadata to attach to each extracted memory.</td></tr><tr id="body-expiration_date"><td><code>expiration_date</code></td><td><code>string (date) | null</code></td><td>아니요</td><td>Optional expiration date in YYYY-MM-DD format. After this date, memories are hidden from search and get-all unless `show_expired` is true.</td></tr><tr id="body-custom_instructions"><td><code>custom_instructions</code></td><td><code>string</code></td><td>아니요</td><td>Project-level instructions that guide extraction for this call.</td></tr><tr id="body-agent_custom_instructions"><td><code>agent_custom_instructions</code></td><td><code>string</code></td><td>아니요</td><td>Extraction instructions for agent-scoped memories, overriding the project-level setting for this call. Applied when `agent_id` is sent without `user_id`; when both are sent it governs the assistant-attributed memories while `custom_instructions` governs the rest.</td></tr><tr id="body-custom_categories"><td><code>custom_categories</code></td><td><code>object[]</code></td><td>아니요</td><td>Category catalog for this call. Replaces the project-level list rather than merging with it. Omit to fall back to the project list, then the default catalog.</td></tr><tr id="body-infer"><td><code>infer</code></td><td><code>boolean</code></td><td>아니요</td><td>When `false`, stores each message verbatim without running the extraction LLM. <span class="muted">기본값: <code>true</code></span></td></tr><tr id="body-app_id"><td><code>app_id</code></td><td><code>string</code></td><td>아니요</td><td>Scope memories to this app.</td></tr><tr id="body-immutable"><td><code>immutable</code></td><td><code>boolean</code></td><td>아니요</td><td>Mark stored memories as immutable, excluding them from future update/consolidation. <span class="muted">기본값: <code>false</code></span></td></tr><tr id="body-includes"><td><code>includes</code></td><td><code>string</code></td><td>아니요</td><td>Free-text hint of what to include during extraction, e.g. &quot;vehicles&quot;.</td></tr><tr id="body-excludes"><td><code>excludes</code></td><td><code>string</code></td><td>아니요</td><td>Free-text hint of what to exclude during extraction, e.g. &quot;politics&quot;.</td></tr><tr id="body-enable_graph"><td><code>enable_graph</code></td><td><code>boolean</code></td><td>아니요</td><td>Enable graph memory extraction for this call.</td></tr><tr id="body-structured_data_schema"><td><code>structured_data_schema</code></td><td><code>object | null</code></td><td>아니요</td><td>Optional schema constraining structured extraction. Exact shape not fully characterized; observed only as null in captured traffic.</td></tr><tr id="body-output_format"><td><code>output_format</code></td><td><code>string | null</code></td><td>아니요</td><td>Response envelope version, e.g. &quot;v1.1&quot;. Full set of accepted values not confirmed.</td></tr><tr id="body-prompt_profile_id"><td><code>prompt_profile_id</code></td><td><code>string | null</code></td><td>아니요</td><td>ID of a saved prompt profile to use for extraction.</td></tr><tr id="body-temporal_reasoning"><td><code>temporal_reasoning</code></td><td><code>boolean</code></td><td>아니요</td><td>Enable temporal reasoning during extraction.</td></tr><tr id="body-timezone"><td><code>timezone</code></td><td><code>string</code></td><td>아니요</td><td>IANA timezone used to interpret observation_datetime and observation_date, e.g. &quot;UTC&quot;.</td></tr><tr id="body-observation_datetime"><td><code>observation_datetime</code></td><td><code>string (date-time)</code></td><td>아니요</td><td>ISO 8601 datetime the conversation was observed.</td></tr><tr id="body-observation_date"><td><code>observation_date</code></td><td><code>string (date)</code></td><td>아니요</td><td>Date the conversation was observed (YYYY-MM-DD).</td></tr><tr id="body-timestamp"><td><code>timestamp</code></td><td><code>integer</code></td><td>아니요</td><td>Unix epoch seconds used to backdate created_at on the stored memories. Not echoed back in the event payload but confirmed applied.</td></tr></tbody></table></div>
+<div class="code"><div class="code-title">요청 예시</div><pre><code class="language-json">{
+  &quot;messages&quot;: [
+    {
+      &quot;role&quot;: &quot;user&quot;,
+      &quot;content&quot;: &quot;I just moved to San Francisco from New York.&quot;
+    },
+    {
+      &quot;role&quot;: &quot;assistant&quot;,
+      &quot;content&quot;: &quot;Got it, I'll update your location.&quot;
+    }
+  ],
+  &quot;user_id&quot;: &quot;alice&quot;
+}</code></pre></div>
+<h3>응답</h3>
+<h4><code>200</code> Memory addition queued; returns an event identifier clients can poll via `GET /v1/event/{event_id}/`.</h4>
+<div class="table-wrap"><table><thead><tr><th>이름</th><th>타입</th><th>필수</th><th>설명</th></tr></thead><tbody><tr><td><code>message</code></td><td><code>string</code></td><td>아니요</td><td>Only present when `infer` is `false`, where processing is synchronous.</td></tr><tr><td><code>status</code></td><td><code>string</code></td><td>아니요</td><td> <span class="muted">허용 값: <code>PENDING</code>, <code>SUCCEEDED</code>, <code>FAILED</code></span></td></tr><tr><td><code>event_id</code></td><td><code>string (uuid)</code></td><td>아니요</td><td></td></tr><tr><td><code>results</code></td><td><code>object[]</code></td><td>아니요</td><td>Only present when `infer` is `false`, where processing is synchronous and memories are stored verbatim without extraction.</td></tr><tr><td><code>results[].id</code></td><td><code>string (uuid)</code></td><td>아니요</td><td></td></tr><tr><td><code>results[].data</code></td><td><code>object</code></td><td>아니요</td><td></td></tr><tr><td><code>results[].data.memory</code></td><td><code>string</code></td><td>아니요</td><td></td></tr><tr><td><code>results[].event</code></td><td><code>string</code></td><td>아니요</td><td></td></tr></tbody></table></div>
+<div class="code"><div class="code-title">응답 예시</div><pre><code class="language-json">{
+  &quot;event_id&quot;: &quot;2c4d1f44-4f7b-4b2f-9f6e-7b5b4f5a1234&quot;,
+  &quot;status&quot;: &quot;PENDING&quot;
+}</code></pre></div>
+<h4><code>400</code> Validation error, e.g. missing `messages` or no entity ID supplied.</h4>
+<h4><code>401</code> Unauthorized: missing or invalid API key.</h4>
+<h3>코드 예시</h3>
+<div class="tabs"><section class="tab-panel"><h4 class="tab-label">cURL</h4><div class="code"><pre><code class="language-curl">curl -X POST https://api.mem0.ai/v3/memories/add/ \
+  -H &quot;Authorization: Token &lt;api-key&gt;&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;messages&quot;: [
+      {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;I just moved to San Francisco from New York.&quot;},
+      {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;Got it, I\u0027ll update your location.&quot;}
+    ],
+    &quot;user_id&quot;: &quot;alice&quot;
+  }'</code></pre></div></section><section class="tab-panel"><h4 class="tab-label">Python</h4><div class="code"><pre><code class="language-python">from mem0 import MemoryClient
+
+client = MemoryClient(api_key=&quot;your-api-key&quot;)
+
+result = client.add(
+    messages=[
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;I just moved to San Francisco from New York.&quot;},
+        {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;Got it, I'll update your location.&quot;}
+    ],
+    user_id=&quot;alice&quot;,
+)
+print(result)</code></pre></div></section><section class="tab-panel"><h4 class="tab-label">JavaScript</h4><div class="code"><pre><code class="language-javascript">import MemoryClient from &quot;mem0ai&quot;;
+
+const client = new MemoryClient({ apiKey: &quot;your-api-key&quot; });
+
+const result = await client.add(
+  [
+    { role: &quot;user&quot;, content: &quot;I just moved to San Francisco from New York.&quot; },
+    { role: &quot;assistant&quot;, content: &quot;Got it, I'll update your location.&quot; },
+  ],
+  { userId: &quot;alice&quot; }
+);
+console.log(result);</code></pre></div></section></div></div><p>V3 추가 전용 파이프라인을 사용해 대화에서 메모리를 추출하고 저장합니다. 이 엔드포인트는 단일 패스 ADD 전용 추출을 사용합니다. 즉, LLM을 한 번만 호출하며 UPDATE/DELETE는 없습니다. 메모리는 시간이 지나면서 쌓이고, 덮어쓰이지 않습니다.</p><h2 id="endpoint">엔드포인트</h2><ul><li><strong>메서드</strong>: <code>POST</code></li><li><strong>URL</strong>: <code>/v3/memories/add/</code></li><li><strong>Content-Type</strong>: <code>application/json</code></li></ul><p>처리는 비동기로 진행됩니다. 응답은 <code>GET /v1/event/{event_id}/</code>로 폴링할 수 있는 <code>event_id</code>를 반환합니다.</p><h2 id="required-headers">필수 헤더</h2><div class="table-wrap"><table><thead><tr><th>헤더</th><th>필수</th><th>설명</th></tr></thead><tbody><tr><td><code>Authorization: Token &lt;MEM0_API_KEY&gt;</code></td><td>예</td><td>워크스페이스 범위의 API 키입니다.</td></tr><tr><td><code>Accept: application/json</code></td><td>예</td><td>JSON 응답을 보장합니다.</td></tr></tbody></table></div><h2 id="request-body">요청 본문</h2><p>Mem0가 메모리를 추출할 대화 메시지를 제공합니다. 메모리를 세션 범위로 지정하려면 엔터티 ID(<code>user_id</code>, <code>agent_id</code>, <code>app_id</code>, <code>run_id</code>)가 하나 이상 있어야 합니다. 엔터티 ID는 최상위 수준에서 받습니다.</p><div class="tabs"><section class="tab-panel"><h4 class="tab-label">Basic request</h4><div class="code"><pre><code class="language-json">{
+  &quot;user_id&quot;: &quot;alice&quot;,
+  &quot;messages&quot;: [
+    { &quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;I moved to Austin last month.&quot; }
+  ],
+  &quot;metadata&quot;: {
+    &quot;source&quot;: &quot;onboarding_form&quot;
+  }
+}</code></pre></div></section></div><h3 id="common-fields">공통 필드</h3><div class="table-wrap"><table><thead><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr></thead><tbody><tr><td><code>messages</code></td><td>array</td><td>예</td><td>Mem0가 메모리를 추출할 대화 턴입니다. 각 객체에는 <code>role</code>과 <code>content</code>가 있어야 합니다.</td></tr><tr><td><code>user_id</code></td><td>string</td><td>아니요*</td><td>메모리를 사용자와 연결합니다.</td></tr><tr><td><code>agent_id</code></td><td>string</td><td>아니요*</td><td>메모리를 에이전트와 연결합니다.</td></tr><tr><td><code>run_id</code></td><td>string</td><td>아니요*</td><td>메모리를 실행과 연결합니다.</td></tr><tr><td><code>app_id</code></td><td>string</td><td>아니요*</td><td>메모리를 앱과 연결합니다.</td></tr><tr><td><code>metadata</code></td><td>object</td><td>선택</td><td>사용자 지정 키/값 메타데이터입니다(예: <code>{&quot;topic&quot;: &quot;preferences&quot;}</code>).</td></tr><tr><td><code>infer</code></td><td>boolean (기본값 <code>true</code>)</td><td>선택</td><td><code>false</code>로 설정하면 추론을 건너뛰고 제공한 텍스트를 그대로 저장합니다.</td></tr><tr><td><code>expiration_date</code></td><td>string</td><td>선택</td><td><code>YYYY-MM-DD</code> 형식의 날짜입니다. 메모리는 이 날짜까지 표시되고, 날짜가 지나면 기본적으로 숨겨집니다.</td></tr></tbody></table></div><blockquote><p>* 엔터티 ID(<code>user_id</code>, <code>agent_id</code>, <code>app_id</code>, <code>run_id</code>)가 하나 이상 필요합니다.</p></blockquote><aside class="callout tip"><strong class="callout-label">팁</strong><p>더 자세한 내용이 필요한가요? 필드 설명, 타입, 제약 조건 전체는 아래 <a href="#body-messages">모든 요청 매개변수</a>를 참고하세요.</p></aside><h2 id="response">응답</h2><p>요청은 백그라운드 처리 대기열에 들어갑니다. 응답에는 상태 추적용 <code>event_id</code>가 포함됩니다.</p><div class="tabs"><section class="tab-panel"><h4 class="tab-label">200 response</h4><div class="code"><pre><code class="language-json">{
+  &quot;event_id&quot;: &quot;evt-uuid&quot;,
+  &quot;status&quot;: &quot;PENDING&quot;
+}</code></pre></div></section><section class="tab-panel"><h4 class="tab-label">400 response</h4><div class="code"><pre><code class="language-json">{
+  &quot;error&quot;: &quot;400 Bad Request&quot;,
+  &quot;details&quot;: {
+    &quot;message&quot;: &quot;Invalid input data. Please refer to the memory creation documentation at https://docs.mem0.ai/platform/quickstart#4-1-create-memories for correct formatting and required fields.&quot;
+  }
+}</code></pre></div></section></div><aside class="callout info"><strong class="callout-label">안내</strong><p><code>GET /v1/event/{event_id}/</code>로 이벤트 상태를 폴링하세요. 처리가 끝나면 상태는 <code>SUCCEEDED</code> 또는 <code>FAILED</code>가 됩니다.</p></aside><aside class="callout info"><strong class="callout-label">안내</strong><p><code>expiration_date</code>가 있는 메모리는 만료 후에도 저장된 상태로 남습니다. 검색과 전체 조회에서는 기본적으로 숨겨지며, 포함하려면 <code>show_expired: true</code>를 전달하세요.</p></aside><aside class="callout info"><strong class="callout-label">안내</strong><p>Python은 <code>expiration_date</code>를, TypeScript는 <code>expirationDate</code>를 사용합니다.</p></aside>
+  </main>
+  <aside class="page-toc" aria-label="이 페이지 목차"><p>이 페이지</p><ul><li class="d2"><a href="#endpoint">엔드포인트</a></li><li class="d2"><a href="#required-headers">필수 헤더</a></li><li class="d2"><a href="#request-body">요청 본문</a></li><li class="d3"><a href="#common-fields">공통 필드</a></li><li class="d2"><a href="#response">응답</a></li></ul></aside>
+</div>
+</body>
+</html>
